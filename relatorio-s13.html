@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    Relatório S-13 | Gestão de Territórios
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="assets/css/style.css"
+  >
+
+  <style>
+
+    /* ==============================
+       PÁGINA DO RELATÓRIO
+    ============================== */
+
+    .s13-page {
+      width: min(1400px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 30px 0 60px;
+    }
+
+
+    /* ==============================
+       BARRA DE FERRAMENTAS
+    ============================== */
+
+    .s13-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .s13-toolbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+
+    /* ==============================
+       FOLHA S-13
+    ============================== */
+
+    .s13-sheet {
+      background: #ffffff;
+      padding: 24px;
+      border: 1px solid #d7d7d7;
+      box-shadow:
+        0 8px 25px
+        rgba(0, 0, 0, 0.06);
+    }
+
+
+    /* ==============================
+       TÍTULO
+    ============================== */
+
+    .s13-document-title {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .s13-document-title h1 {
+      margin: 0;
+      color: #111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+
+    /* ==============================
+       ANO DE SERVIÇO
+    ============================== */
+
+    .s13-service-year {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0 0 14px 5px;
+
+      color: #111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .s13-service-year select {
+      width: 110px;
+
+      padding: 2px 3px;
+
+      border: none;
+      border-bottom: 2px solid #111;
+      border-radius: 0;
+
+      background: transparent;
+
+      color: #111;
+      font: inherit;
+
+      cursor: pointer;
+    }
+
+
+    /* ==============================
+       TABELA
+    ============================== */
+
+    .s13-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .s13-table {
+      width: 100%;
+      min-width: 1050px;
+
+      border-collapse: collapse;
+      table-layout: fixed;
+
+      border: 4px solid #111;
+
+      color: #111;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      font-size: 0.72rem;
+    }
+
+
+    /* ==============================
+       CABEÇALHO
+    ============================== */
+
+    .s13-table thead th {
+      background: #d4d4d4;
+
+      border: 1px solid #111;
+
+      padding: 3px 2px;
+
+      text-align: center;
+      vertical-align: middle;
+
+      font-weight: 400;
+
+      line-height: 1.05;
+    }
+
+    .s13-table thead tr:first-child th {
+      border-bottom: 1px solid #111;
+    }
+
+
+    /* ==============================
+       COLUNAS FIXAS
+    ============================== */
+
+    .s13-col-territorio {
+      width: 48px;
+    }
+
+    .s13-col-ultima {
+      width: 88px;
+    }
+
+
+    /* ==============================
+       SEPARAÇÃO DOS 4 BLOCOS
+    ============================== */
+
+    .s13-group-start {
+      border-left: 4px solid #111 !important;
+    }
+
+    .s13-group-end {
+      border-right: 4px solid #111 !important;
+    }
+
+
+    /* ==============================
+       CORPO DA TABELA
+    ============================== */
+
+    .s13-table tbody td {
+      height: 38px;
+
+      padding: 2px 3px;
+
+      border: 1px solid #777;
+
+      text-align: center;
+      vertical-align: middle;
+
+      background: #fff;
+    }
+
+
+    /* linha forte entre territórios */
+
+    .s13-table tbody tr {
+      border-bottom: 3px solid #111;
+    }
+
+
+    /* número do território */
+
+    .s13-numero {
+      font-size: 0.88rem;
+      font-weight: 400;
+    }
+
+
+    /* última conclusão */
+
+    .s13-ultima {
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+
+    /* responsável */
+
+    .s13-responsavel {
+      height: 19px;
+
+      font-size: 0.82rem;
+      font-weight: 500;
+
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+
+    /* datas */
+
+    .s13-data {
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+
+    /* célula vazia */
+
+    .s13-vazio {
+      color: transparent;
+    }
+
+
+    /* ==============================
+       ESTRUTURA INTERNA DA DESIGNAÇÃO
+    ============================== */
+
+    .s13-assignment {
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr;
+
+      grid-template-rows:
+        20px
+        18px;
+
+      width: 100%;
+      height: 38px;
+    }
+
+    .s13-assignment-name {
+      grid-column:
+        1 / 3;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-bottom:
+        1px solid #777;
+
+      padding: 1px 3px;
+
+      font-size: 0.8rem;
+
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .s13-assignment-date {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 0.69rem;
+    }
+
+    .s13-assignment-date:first-of-type {
+      border-right:
+        1px solid #777;
+    }
+
+
+    /* ==============================
+       MENSAGEM
+    ============================== */
+
+    .s13-message {
+      padding: 35px !important;
+      text-align: center;
+      color: #666 !important;
+    }
+
+
+    /* ==============================
+       RODAPÉ
+    ============================== */
+
+    .s13-footer {
+      margin-top: 7px;
+
+      color: #111;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      font-size: 0.68rem;
+
+      line-height: 1.3;
+    }
+
+    .s13-footer p {
+      margin: 0 0 7px;
+    }
+
+    .s13-code {
+      font-size: 0.68rem;
+    }
+
+
+    /* ==============================
+       IMPRESSÃO
+    ============================== */
+
+    @media print {
+
+      @page {
+        size: A4 landscape;
+        margin: 7mm;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+
+        background: #fff;
+      }
+
+      .app-header,
+      .s13-toolbar {
+        display: none !important;
+      }
+
+      .s13-page {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .s13-sheet {
+        padding: 0;
+
+        border: none;
+        box-shadow: none;
+      }
+
+      .s13-table-wrapper {
+        overflow: visible;
+      }
+
+      .s13-table {
+        width: 100%;
+        min-width: 0;
+
+        font-size: 7.5px;
+
+        border-width: 2px;
+      }
+
+      .s13-table thead th {
+        padding: 2px 1px;
+      }
+
+      .s13-table tbody td {
+        height: 21px;
+        padding: 0;
+      }
+
+      .s13-table tbody tr {
+        border-bottom-width: 2px;
+      }
+
+      .s13-group-start {
+        border-left-width:
+          2px !important;
+      }
+
+      .s13-group-end {
+        border-right-width:
+          2px !important;
+      }
+
+      .s13-assignment {
+        height: 21px;
+
+        grid-template-rows:
+          11px
+          10px;
+      }
+
+      .s13-assignment-name {
+        font-size: 7px;
+        padding: 0 1px;
+      }
+
+      .s13-assignment-date {
+        font-size: 6px;
+      }
+
+      .s13-document-title {
+        margin-bottom: 10px;
+      }
+
+      .s13-document-title h1 {
+        font-size: 14px;
+      }
+
+      .s13-service-year {
+        margin-bottom: 7px;
+        font-size: 10px;
+      }
+
+      .s13-service-year select {
+        appearance: none;
+        -webkit-appearance: none;
+
+        width: 70px;
+
+        padding: 0;
+
+        font-size: 10px;
+      }
+
+      .s13-footer {
+        font-size: 7px;
+        margin-top: 4px;
+      }
+
+      .s13-code {
+        font-size: 7px;
+      }
+
+    }
+
+
+    /* ==============================
+       CELULAR
+    ============================== */
+
+    @media (
+      max-width: 700px
+    ) {
+
+      .s13-page {
+        width:
+          calc(100% - 20px);
+
+        padding-top: 18px;
+      }
+
+      .s13-sheet {
+        padding: 12px;
+      }
+
+      .s13-document-title h1 {
+        font-size: 1rem;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+  <header class="app-header">
+
+    <div class="brand">
+
+      <span>
+        GESTÃO DE TERRITÓRIOS
+      </span>
+
+      <strong>
+        Relatório S-13
+      </strong>
+
+    </div>
+
+  </header>
+
+
+
+  <main class="s13-page">
+
+
+    <!-- =========================
+         FERRAMENTAS
+    ========================== -->
+
+    <div class="s13-toolbar">
+
+      <a
+        href="index.html"
+        class="btn btn-secondary"
+      >
+        ← Voltar aos territórios
+      </a>
+
+
+      <div class="s13-toolbar-actions">
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          id="printButton"
+        >
+          Imprimir / Salvar PDF
+        </button>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         FOLHA OFICIAL
+    ========================== -->
+
+    <section class="s13-sheet">
+
+
+      <!-- TÍTULO -->
+
+      <div class="s13-document-title">
+
+        <h1>
+          REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO
+        </h1>
+
+      </div>
+
+
+
+      <!-- ANO DE SERVIÇO -->
+
+      <div class="s13-service-year">
+
+        <label for="serviceYear">
+          Ano de Serviço:
+        </label>
+
+        <select id="serviceYear"></select>
+
+      </div>
+
+
+
+      <!-- TABELA -->
+
+      <div class="s13-table-wrapper">
+
+        <table class="s13-table">
+
+
+          <thead>
+
+
+            <!-- PRIMEIRA LINHA -->
+
+            <tr>
+
+              <th
+                rowspan="2"
+                class="s13-col-territorio"
+              >
+                Terr.<br>
+                n.º
+              </th>
+
+
+              <th
+                rowspan="2"
+                class="s13-col-ultima"
+              >
+                Última data<br>
+                concluída*
+              </th>
+
+
+              <th
+                colspan="2"
+                class="s13-group-start s13-group-end"
+              >
+                Designado para
+              </th>
+
+
+              <th
+                colspan="2"
+                class="s13-group-start s13-group-end"
+              >
+                Designado para
+              </th>
+
+
+              <th
+                colspan="2"
+                class="s13-group-start s13-group-end"
+              >
+                Designado para
+              </th>
+
+
+              <th
+                colspan="2"
+                class="s13-group-start s13-group-end"
+              >
+                Designado para
+              </th>
+
+            </tr>
+
+
+
+            <!-- SEGUNDA LINHA -->
+
+            <tr>
+
+              <!-- BLOCO 1 -->
+
+              <th class="s13-group-start">
+                Data da<br>
+                designação
+              </th>
+
+              <th class="s13-group-end">
+                Data da<br>
+                conclusão
+              </th>
+
+
+              <!-- BLOCO 2 -->
+
+              <th class="s13-group-start">
+                Data da<br>
+                designação
+              </th>
+
+              <th class="s13-group-end">
+                Data da<br>
+                conclusão
+              </th>
+
+
+              <!-- BLOCO 3 -->
+
+              <th class="s13-group-start">
+                Data da<br>
+                designação
+              </th>
+
+              <th class="s13-group-end">
+                Data da<br>
+                conclusão
+              </th>
+
+
+              <!-- BLOCO 4 -->
+
+              <th class="s13-group-start">
+                Data da<br>
+                designação
+              </th>
+
+              <th class="s13-group-end">
+                Data da<br>
+                conclusão
+              </th>
+
+            </tr>
+
+
+          </thead>
+
+
+
+          <tbody id="s13Body">
+
+            <tr>
+
+              <td
+                colspan="10"
+                class="s13-message"
+              >
+                Carregando relatório...
+              </td>
+
+            </tr>
+
+          </tbody>
+
+
+        </table>
+
+      </div>
+
+
+
+      <!-- RODAPÉ -->
+
+      <footer class="s13-footer">
+
+        <p>
+          *Ao iniciar uma nova folha, use esta coluna para registrar a data em que cada território foi concluído pela última vez.
+        </p>
+
+        <div class="s13-code">
+          S-13-T&nbsp;&nbsp;01/22
+        </div>
+
+      </footer>
+
+
+    </section>
+
+
+  </main>
+
+
+  <script
+    src="assets/js/relatorio-s13.js"
+  ></script>
+
+
+</body>
+
+</html>
