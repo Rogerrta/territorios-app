@@ -2,6 +2,13 @@ let territorios = [];
 
 
 // ===============================
+// CONFIGURAÇÕES
+// ===============================
+
+const LIMITE_ATENCAO_DIAS = 30;
+
+
+// ===============================
 // ELEMENTOS DA PÁGINA
 // ===============================
 
@@ -194,6 +201,219 @@ function salvarTerritorios() {
 
 
 // ===============================
+// FORMATAÇÃO DE DATA
+// ===============================
+
+function formatarData(
+  data
+) {
+
+  if (!data) {
+    return "-";
+  }
+
+
+  const partes =
+    data.split("-");
+
+
+  if (
+    partes.length !== 3
+  ) {
+
+    return data;
+
+  }
+
+
+  const [
+    ano,
+    mes,
+    dia
+  ] = partes;
+
+
+  return (
+    `${dia}/${mes}/${ano}`
+  );
+
+}
+
+
+// ===============================
+// TEMPO EM USO
+// ===============================
+
+function calcularDiasNumero(
+  dataDesignacao
+) {
+
+  if (!dataDesignacao) {
+    return 0;
+  }
+
+
+  const partes =
+    dataDesignacao
+      .split("-")
+      .map(Number);
+
+
+  if (
+    partes.length !== 3 ||
+    partes.some(
+      parte =>
+        Number.isNaN(parte)
+    )
+  ) {
+
+    return 0;
+  }
+
+
+  const [
+    ano,
+    mes,
+    dia
+  ] = partes;
+
+
+  // Trabalhamos com UTC aqui para evitar
+  // diferenças causadas por horário de verão
+  // ou mudança de fuso.
+
+  const inicio =
+    Date.UTC(
+      ano,
+      mes - 1,
+      dia
+    );
+
+
+  const hoje =
+    new Date();
+
+
+  const hojeUTC =
+    Date.UTC(
+      hoje.getFullYear(),
+      hoje.getMonth(),
+      hoje.getDate()
+    );
+
+
+  const diferenca =
+    hojeUTC - inicio;
+
+
+  const dias =
+    Math.floor(
+      diferenca /
+      86400000
+    );
+
+
+  // Evita mostrar número negativo
+  // se uma data futura for informada.
+
+  return Math.max(
+    0,
+    dias
+  );
+
+}
+
+
+function calcularDias(
+  dataDesignacao
+) {
+
+  if (!dataDesignacao) {
+    return "-";
+  }
+
+
+  const dias =
+    calcularDiasNumero(
+      dataDesignacao
+    );
+
+
+  if (dias === 1) {
+
+    return "1 dia";
+
+  }
+
+
+  return `${dias} dias`;
+
+}
+
+
+// ===============================
+// STATUS AUTOMÁTICO
+// ===============================
+
+function obterStatusEfetivo(
+  territorio
+) {
+
+  if (
+    territorio.status ===
+    "disponivel"
+  ) {
+
+    return "disponivel";
+
+  }
+
+
+  if (
+    territorio.status ===
+    "uso"
+  ) {
+
+    const diasUso =
+      calcularDiasNumero(
+        territorio.dataDesignacao
+      );
+
+
+    if (
+      diasUso >=
+      LIMITE_ATENCAO_DIAS
+    ) {
+
+      return "atencao";
+
+    }
+
+
+    return "uso";
+
+  }
+
+
+  // Compatibilidade com algum dado antigo
+  // que ainda esteja salvo como "atencao".
+
+  if (
+    territorio.status ===
+    "atencao"
+  ) {
+
+    return "atencao";
+
+  }
+
+
+  return territorio.status;
+
+}
+
+
+// ===============================
 // RESUMO
 // ===============================
 
@@ -202,7 +422,9 @@ function atualizarResumo() {
   const disponiveis =
     territorios.filter(
       territorio =>
-        territorio.status ===
+        obterStatusEfetivo(
+          territorio
+        ) ===
         "disponivel"
     ).length;
 
@@ -210,7 +432,9 @@ function atualizarResumo() {
   const emUso =
     territorios.filter(
       territorio =>
-        territorio.status ===
+        obterStatusEfetivo(
+          territorio
+        ) ===
         "uso"
     ).length;
 
@@ -218,7 +442,9 @@ function atualizarResumo() {
   const atencao =
     territorios.filter(
       territorio =>
-        territorio.status ===
+        obterStatusEfetivo(
+          territorio
+        ) ===
         "atencao"
     ).length;
 
@@ -303,13 +529,21 @@ function renderizarTerritorios(
       );
 
 
+      const statusEfetivo =
+        obterStatusEfetivo(
+          territorio
+        );
+
+
       let statusTexto = "";
-
       let statusClasse = "";
+      let detalhes = "";
 
+
+      // DISPONÍVEL
 
       if (
-        territorio.status ===
+        statusEfetivo ===
         "disponivel"
       ) {
 
@@ -319,44 +553,6 @@ function renderizarTerritorios(
         statusClasse =
           "available";
 
-      }
-
-
-      if (
-        territorio.status ===
-        "uso"
-      ) {
-
-        statusTexto =
-          "Em uso";
-
-        statusClasse =
-          "in-use";
-
-      }
-
-
-      if (
-        territorio.status ===
-        "atencao"
-      ) {
-
-        statusTexto =
-          "Atenção";
-
-        statusClasse =
-          "warning";
-
-      }
-
-
-      let detalhes = "";
-
-
-      if (
-        territorio.status ===
-        "disponivel"
-      ) {
 
         detalhes = `
 
@@ -369,10 +565,25 @@ function renderizarTerritorios(
       }
 
 
+      // EM USO
+
       if (
-        territorio.status ===
+        statusEfetivo ===
         "uso"
       ) {
+
+        statusTexto =
+          "Em uso";
+
+        statusClasse =
+          "in-use";
+
+
+        const tempoUso =
+          calcularDias(
+            territorio.dataDesignacao
+          );
+
 
         detalhes = `
 
@@ -402,15 +613,33 @@ function renderizarTerritorios(
 
           </p>
 
+          <p>
+
+            Tempo em uso:
+            <strong>
+              ${tempoUso}
+            </strong>
+
+          </p>
+
         `;
 
       }
 
 
+      // ATENÇÃO
+
       if (
-        territorio.status ===
+        statusEfetivo ===
         "atencao"
       ) {
+
+        statusTexto =
+          "Atenção";
+
+        statusClasse =
+          "warning";
+
 
         const tempoUso =
           calcularDias(
@@ -435,13 +664,22 @@ function renderizarTerritorios(
 
           <p>
 
-            Há:
+            Desde:
             <strong>
               ${
-                tempoUso !== "-"
-                  ? tempoUso
-                  : `${territorio.diasUso || 0} dias`
+                formatarData(
+                  territorio.dataDesignacao
+                )
               }
+            </strong>
+
+          </p>
+
+          <p>
+
+            Tempo em uso:
+            <strong>
+              ${tempoUso}
             </strong>
 
           </p>
@@ -504,134 +742,6 @@ function renderizarTerritorios(
 
 
 // ===============================
-// FORMATAÇÃO DE DATA
-// ===============================
-
-function formatarData(
-  data
-) {
-
-  if (!data) {
-    return "-";
-  }
-
-
-  const partes =
-    data.split("-");
-
-
-  if (
-    partes.length !== 3
-  ) {
-
-    return data;
-
-  }
-
-
-  const [
-    ano,
-    mes,
-    dia
-  ] = partes;
-
-
-  return (
-    `${dia}/${mes}/${ano}`
-  );
-
-}
-
-
-// ===============================
-// TEMPO EM USO
-// ===============================
-
-function calcularDias(
-  dataDesignacao
-) {
-
-  if (!dataDesignacao) {
-    return "-";
-  }
-
-
-  const partes =
-    dataDesignacao
-      .split("-")
-      .map(Number);
-
-
-  if (
-    partes.length !== 3
-  ) {
-
-    return "-";
-
-  }
-
-
-  const [
-    ano,
-    mes,
-    dia
-  ] = partes;
-
-
-  const inicio =
-    new Date(
-      ano,
-      mes - 1,
-      dia
-    );
-
-
-  const hoje =
-    new Date();
-
-
-  const inicioDia =
-    new Date(
-      inicio.getFullYear(),
-      inicio.getMonth(),
-      inicio.getDate()
-    );
-
-
-  const hojeDia =
-    new Date(
-      hoje.getFullYear(),
-      hoje.getMonth(),
-      hoje.getDate()
-    );
-
-
-  const diferenca =
-    hojeDia.getTime()
-    -
-    inicioDia.getTime();
-
-
-  const dias =
-    Math.floor(
-      diferenca /
-      86400000
-    );
-
-
-  if (dias === 1) {
-
-    return "1 dia";
-
-  }
-
-
-  return `${dias} dias`;
-
-}
-
-
-// ===============================
 // FILTROS
 // ===============================
 
@@ -679,11 +789,17 @@ function aplicarFiltros() {
           );
 
 
+        const statusEfetivo =
+          obterStatusEfetivo(
+            territorio
+          );
+
+
         const correspondeStatus =
           status ===
             "todos"
           ||
-          territorio.status ===
+          statusEfetivo ===
             status;
 
 
@@ -783,7 +899,9 @@ function abrirNovaMovimentacao() {
   const disponiveis =
     territorios.filter(
       territorio =>
-        territorio.status ===
+        obterStatusEfetivo(
+          territorio
+        ) ===
         "disponivel"
     );
 
@@ -936,7 +1054,9 @@ function confirmarNovaMovimentacao(
 
 
   if (
-    territorio.status !==
+    obterStatusEfetivo(
+      territorio
+    ) !==
     "disponivel"
   ) {
 
