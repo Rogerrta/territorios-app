@@ -963,3 +963,186 @@ body.modal-open {
 
 }
 
+/* ========================================
+   MODAL - NOVA MOVIMENTAÇÃO
+======================================== */
+
+.movement-modal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 2000;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+}
+
+.movement-modal[hidden] {
+  display: none;
+}
+
+.movement-modal-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(15, 22, 24, 0.65);
+}
+
+.movement-modal-card {
+  position: relative;
+  z-index: 1;
+
+  width: min(520px, 100%);
+
+  padding: 28px;
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: 18px;
+
+  box-shadow:
+    0 24px 70px
+    rgba(15, 22, 24, 0.25);
+}
+
+.movement-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 20px;
+
+  margin-bottom: 26px;
+}
+
+.movement-modal-header h2 {
+  margin: 4px 0 0;
+
+  font-size: 1.6rem;
+}
+
+.movement-modal-close {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  cursor: pointer;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #edf2f3;
+  color: var(--text);
+
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.movement-modal-close:hover {
+  background: #e1e8ea;
+}
+
+
+/* FORMULÁRIO */
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: var(--text);
+
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+
+  padding: 12px 13px;
+
+  background: #fff;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  color: var(--text);
+
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(47, 93, 98, 0.12);
+}
+
+
+/* AÇÕES */
+
+.movement-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 28px;
+}
+
+.btn-cancel {
+  padding: 12px 18px;
+
+  cursor: pointer;
+
+  background: #edf2f3;
+  color: var(--primary);
+
+  border: none;
+  border-radius: 10px;
+
+  font-weight: 700;
+}
+
+.btn-cancel:hover {
+  background: #e1e8ea;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 600px) {
+
+  .movement-modal {
+    padding: 14px;
+  }
+
+  .movement-modal-card {
+    padding: 22px 18px;
+  }
+
+  .movement-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .movement-modal-actions button {
+    width: 100%;
+  }
+
+}

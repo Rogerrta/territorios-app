@@ -34,7 +34,50 @@ const totalAtencao =
   document.getElementById(
     "totalAtencao"
   );
+const newMovementBtn =
+  document.getElementById(
+    "newMovementBtn"
+  );
 
+const newMovementModal =
+  document.getElementById(
+    "newMovementModal"
+  );
+
+const newMovementClose =
+  document.getElementById(
+    "newMovementClose"
+  );
+
+const newMovementCancel =
+  document.getElementById(
+    "newMovementCancel"
+  );
+
+const newMovementOverlay =
+  document.getElementById(
+    "newMovementOverlay"
+  );
+
+const newMovementForm =
+  document.getElementById(
+    "newMovementForm"
+  );
+
+const movementTerritory =
+  document.getElementById(
+    "movementTerritory"
+  );
+
+const movementResponsible =
+  document.getElementById(
+    "movementResponsible"
+  );
+
+const movementDate =
+  document.getElementById(
+    "movementDate"
+  );
 
 // ===============================
 // CARREGAMENTO
@@ -648,6 +691,232 @@ function abrirTerritorio(
 
 }
 
+// ===============================
+// NOVA MOVIMENTAÇÃO
+// ===============================
+
+function obterDataHoje() {
+
+  const hoje = new Date();
+
+  const ano =
+    hoje.getFullYear();
+
+  const mes =
+    String(
+      hoje.getMonth() + 1
+    ).padStart(2, "0");
+
+  const dia =
+    String(
+      hoje.getDate()
+    ).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+
+function abrirNovaMovimentacao() {
+
+  if (
+    !newMovementModal ||
+    !movementTerritory
+  ) {
+    return;
+  }
+
+
+  movementTerritory.innerHTML = `
+    <option value="">
+      Selecione um território
+    </option>
+  `;
+
+
+  const disponiveis =
+    territorios.filter(
+      territorio =>
+        territorio.status ===
+        "disponivel"
+    );
+
+
+  disponiveis.forEach(
+    territorio => {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        territorio.id;
+
+      option.textContent =
+        `Território ${territorio.numero} — ${territorio.localidade}`;
+
+      movementTerritory.appendChild(
+        option
+      );
+
+    }
+  );
+
+
+  if (movementResponsible) {
+    movementResponsible.value = "";
+  }
+
+
+  if (movementDate) {
+    movementDate.value =
+      obterDataHoje();
+  }
+
+
+  newMovementModal.hidden =
+    false;
+
+  newMovementModal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  if (movementTerritory) {
+    movementTerritory.focus();
+  }
+
+}
+
+
+function fecharNovaMovimentacao() {
+
+  if (!newMovementModal) {
+    return;
+  }
+
+
+  newMovementModal.hidden =
+    true;
+
+  newMovementModal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+}
+
+
+function salvarTerritorios() {
+
+  localStorage.setItem(
+    "territorios",
+    JSON.stringify(
+      territorios
+    )
+  );
+
+}
+
+
+function confirmarNovaMovimentacao(
+  evento
+) {
+
+  evento.preventDefault();
+
+
+  const territorioId =
+    Number(
+      movementTerritory.value
+    );
+
+  const responsavel =
+    movementResponsible.value
+      .trim();
+
+  const dataDesignacao =
+    movementDate.value;
+
+
+  if (
+    !territorioId ||
+    !responsavel ||
+    !dataDesignacao
+  ) {
+
+    alert(
+      "Preencha todos os campos."
+    );
+
+    return;
+  }
+
+
+  const territorio =
+    territorios.find(
+      item =>
+        Number(item.id) ===
+        territorioId
+    );
+
+
+  if (!territorio) {
+
+    alert(
+      "Território não encontrado."
+    );
+
+    return;
+  }
+
+
+  if (
+    territorio.status !==
+    "disponivel"
+  ) {
+
+    alert(
+      "Este território não está disponível."
+    );
+
+    return;
+  }
+
+
+  territorio.status =
+    "uso";
+
+  territorio.responsavel =
+    responsavel;
+
+  territorio.dataDesignacao =
+    dataDesignacao;
+
+
+  salvarTerritorios();
+
+  atualizarResumo();
+
+  aplicarFiltros();
+
+  fecharNovaMovimentacao();
+
+
+  alert(
+    `Território ${territorio.numero} designado para ${responsavel}.`
+  );
+
+}
 
 // ===============================
 // EVENTOS
@@ -672,6 +941,232 @@ if (statusFilter) {
 
 }
 
+// ===============================
+// NOVA MOVIMENTAÇÃO
+// ===============================
+
+function obterDataHoje() {
+
+  const hoje = new Date();
+
+  const ano =
+    hoje.getFullYear();
+
+  const mes =
+    String(
+      hoje.getMonth() + 1
+    ).padStart(2, "0");
+
+  const dia =
+    String(
+      hoje.getDate()
+    ).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+
+function abrirNovaMovimentacao() {
+
+  if (
+    !newMovementModal ||
+    !movementTerritory
+  ) {
+    return;
+  }
+
+
+  movementTerritory.innerHTML = `
+    <option value="">
+      Selecione um território
+    </option>
+  `;
+
+
+  const disponiveis =
+    territorios.filter(
+      territorio =>
+        territorio.status ===
+        "disponivel"
+    );
+
+
+  disponiveis.forEach(
+    territorio => {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        territorio.id;
+
+      option.textContent =
+        `Território ${territorio.numero} — ${territorio.localidade}`;
+
+      movementTerritory.appendChild(
+        option
+      );
+
+    }
+  );
+
+
+  if (movementResponsible) {
+    movementResponsible.value = "";
+  }
+
+
+  if (movementDate) {
+    movementDate.value =
+      obterDataHoje();
+  }
+
+
+  newMovementModal.hidden =
+    false;
+
+  newMovementModal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  if (movementTerritory) {
+    movementTerritory.focus();
+  }
+
+}
+
+
+function fecharNovaMovimentacao() {
+
+  if (!newMovementModal) {
+    return;
+  }
+
+
+  newMovementModal.hidden =
+    true;
+
+  newMovementModal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+}
+
+
+function salvarTerritorios() {
+
+  localStorage.setItem(
+    "territorios",
+    JSON.stringify(
+      territorios
+    )
+  );
+
+}
+
+
+function confirmarNovaMovimentacao(
+  evento
+) {
+
+  evento.preventDefault();
+
+
+  const territorioId =
+    Number(
+      movementTerritory.value
+    );
+
+  const responsavel =
+    movementResponsible.value
+      .trim();
+
+  const dataDesignacao =
+    movementDate.value;
+
+
+  if (
+    !territorioId ||
+    !responsavel ||
+    !dataDesignacao
+  ) {
+
+    alert(
+      "Preencha todos os campos."
+    );
+
+    return;
+  }
+
+
+  const territorio =
+    territorios.find(
+      item =>
+        Number(item.id) ===
+        territorioId
+    );
+
+
+  if (!territorio) {
+
+    alert(
+      "Território não encontrado."
+    );
+
+    return;
+  }
+
+
+  if (
+    territorio.status !==
+    "disponivel"
+  ) {
+
+    alert(
+      "Este território não está disponível."
+    );
+
+    return;
+  }
+
+
+  territorio.status =
+    "uso";
+
+  territorio.responsavel =
+    responsavel;
+
+  territorio.dataDesignacao =
+    dataDesignacao;
+
+
+  salvarTerritorios();
+
+  atualizarResumo();
+
+  aplicarFiltros();
+
+  fecharNovaMovimentacao();
+
+
+  alert(
+    `Território ${territorio.numero} designado para ${responsavel}.`
+  );
+
+}
 
 // ===============================
 // INICIALIZAÇÃO
