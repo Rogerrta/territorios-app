@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Território | Controle de Territórios</title>
+
+  <link
+    rel="stylesheet"
+    href="assets/css/style.css"
+  >
+</head>
+
+<body>
+
+  <header class="topbar">
+
+    <div>
+      <p class="eyebrow">
+        Gestão de territórios
+      </p>
+
+      <h1>
+        Detalhes do território
+      </h1>
+    </div>
+
+    <a
+      href="index.html"
+      class="btn-primary back-link"
+    >
+      ← Voltar
+    </a>
+
+  </header>
+
+
+  <main class="container territory-detail">
+
+    <!-- CABEÇALHO DO TERRITÓRIO -->
+
+    <section class="territory-detail-header">
+
+      <div>
+
+        <p class="eyebrow">
+          Território
+        </p>
+
+        <h2 id="territoryTitle">
+          Carregando...
+        </h2>
+
+        <p
+          class="territory-location"
+          id="territoryLocation"
+        ></p>
+
+      </div>
+
+      <span
+        class="status"
+        id="territoryStatus"
+      ></span>
+
+    </section>
+
+
+    <!-- MAPA -->
+
+    <section class="detail-card map-card">
+
+      <div class="detail-section-title">
+
+        <div>
+          <p class="eyebrow">
+            Mapa
+          </p>
+
+          <h3>
+            Área do território
+          </h3>
+        </div>
+
+      </div>
+
+
+      <div
+        class="territory-map-wrapper"
+        id="mapWrapper"
+      >
+
+        <img
+          id="territoryMap"
+          class="territory-map"
+          src=""
+          alt="Mapa do território"
+        >
+
+     
+    </section>
+
+
+    <!-- SITUAÇÃO -->
+
+    <section class="detail-card">
+
+      <div class="detail-section-title">
+
+        <div>
+          <p class="eyebrow">
+            Situação
+          </p>
+
+          <h3>
+            Situação atual
+          </h3>
+        </div>
+
+      </div>
+
+
+      <div
+        class="current-status"
+        id="currentStatus"
+      >
+      </div>
+
+
+      <div
+        class="territory-actions"
+        id="territoryActions"
+      >
+      </div>
+
+    </section>
+
+
+    <!-- HISTÓRICO -->
+
+    <section class="detail-card">
+
+      <div class="detail-section-title">
+
+        <div>
+          <p class="eyebrow">
+            Registro
+          </p>
+
+          <h3>
+            Histórico de movimentações
+          </h3>
+        </div>
+
+      </div>
+
+
+      <div id="historyContent">
+
+        <p class="empty-message">
+          Ainda não há movimentações registradas neste território.
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- MODAL DO MAPA -->
+
+  
+
+
+  <script src="assets/js/territorio.js"></script>
+
+</body>
+</html>

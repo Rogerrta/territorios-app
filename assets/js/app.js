@@ -177,10 +177,11 @@ function aplicarFiltros() {
 }
 
 function abrirTerritorio(id) {
-  console.log(`Abrir território ${id}`);
+  window.location.href = `territorio.html?id=${id}`;
+}
 
   // Na próxima etapa vamos abrir a tela individual.
-}
+
 
 searchInput.addEventListener("input", aplicarFiltros);
 statusFilter.addEventListener("change", aplicarFiltros);
