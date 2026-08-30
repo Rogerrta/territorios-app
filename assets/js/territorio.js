@@ -1,71 +1,139 @@
-const params = new URLSearchParams(window.location.search);
+const params =
+  new URLSearchParams(
+    window.location.search
+  );
 
-const territoryId = Number(params.get("id"));
+const territoryId =
+  Number(
+    params.get("id")
+  );
+
 
 const territoryTitle =
-  document.getElementById("territoryTitle");
+  document.getElementById(
+    "territoryTitle"
+  );
 
 const territoryLocation =
-  document.getElementById("territoryLocation");
+  document.getElementById(
+    "territoryLocation"
+  );
 
 const territoryStatus =
-  document.getElementById("territoryStatus");
-
-const territoryMap =
-  document.getElementById("territoryMap");
+  document.getElementById(
+    "territoryStatus"
+  );
 
 const mapWrapper =
-  document.getElementById("mapWrapper");
+  document.getElementById(
+    "mapWrapper"
+  );
 
 const currentStatus =
-  document.getElementById("currentStatus");
+  document.getElementById(
+    "currentStatus"
+  );
 
 const territoryActions =
-  document.getElementById("territoryActions");
+  document.getElementById(
+    "territoryActions"
+  );
 
 const historyContent =
-  document.getElementById("historyContent");
+  document.getElementById(
+    "historyContent"
+  );
 
+
+let territoriosCarregados = [];
+
+let territorioAtual = null;
+
+
+// ===============================
+// CARREGAMENTO
+// ===============================
 
 async function carregarTerritorio() {
 
   try {
 
     const resposta =
-      await fetch("data/territorios.json");
+      await fetch(
+        "data/territorios.json"
+      );
+
 
     if (!resposta.ok) {
+
       throw new Error(
         "Não foi possível carregar os territórios."
       );
+
     }
 
-    const territorios =
+
+    territoriosCarregados =
       await resposta.json();
 
-    const territorio =
-      territorios.find(
-        item => item.id === territoryId
+
+    const dadosLocais =
+      localStorage.getItem(
+        "territorios"
       );
 
 
-    if (!territorio) {
+    if (dadosLocais) {
+
+      try {
+
+        territoriosCarregados =
+          JSON.parse(
+            dadosLocais
+          );
+
+      } catch (erro) {
+
+        console.warn(
+          "Não foi possível ler os dados locais.",
+          erro
+        );
+
+      }
+
+    }
+
+
+    territorioAtual =
+      territoriosCarregados.find(
+        item =>
+          Number(item.id) ===
+          Number(territoryId)
+      );
+
+
+    if (!territorioAtual) {
 
       mostrarErro(
         "Território não encontrado."
       );
 
       return;
+
     }
 
 
     renderizarTerritorio(
-      territorio
+      territorioAtual
     );
+
 
   } catch (erro) {
 
-    console.error(erro);
+    console.error(
+      erro
+    );
+
 
     mostrarErro(
       "Não foi possível carregar o território."
@@ -76,18 +144,32 @@ async function carregarTerritorio() {
 }
 
 
-function renderizarTerritorio(territorio) {
+// ===============================
+// RENDERIZAÇÃO PRINCIPAL
+// ===============================
+
+function renderizarTerritorio(
+  territorio
+) {
 
   document.title =
     `Território ${territorio.numero} | Controle de Territórios`;
 
 
-  territoryTitle.textContent =
-    `Território ${territorio.numero}`;
+  if (territoryTitle) {
+
+    territoryTitle.textContent =
+      `Território ${territorio.numero}`;
+
+  }
 
 
-  territoryLocation.textContent =
-    territorio.localidade;
+  if (territoryLocation) {
+
+    territoryLocation.textContent =
+      territorio.localidade || "";
+
+  }
 
 
   renderizarStatus(
@@ -112,162 +194,165 @@ function renderizarTerritorio(territorio) {
 }
 
 
-function renderizarStatus(territorio) {
+// ===============================
+// STATUS
+// ===============================
+
+function renderizarStatus(
+  territorio
+) {
+
+  if (!territoryStatus) {
+    return;
+  }
+
 
   territoryStatus.className =
     "status";
 
 
   if (
-    territorio.status === "disponivel"
+    territorio.status ===
+    "disponivel"
   ) {
 
     territoryStatus.textContent =
       "Disponível";
 
+
     territoryStatus.classList.add(
       "available"
     );
+
+    return;
 
   }
 
 
   if (
-    territorio.status === "uso"
+    territorio.status ===
+    "uso"
   ) {
 
     territoryStatus.textContent =
       "Em uso";
 
+
     territoryStatus.classList.add(
       "in-use"
     );
+
+    return;
 
   }
 
 
   if (
-    territorio.status === "atencao"
+    territorio.status ===
+    "atencao"
   ) {
 
     territoryStatus.textContent =
       "Atenção";
 
+
     territoryStatus.classList.add(
-      "warning"
+      "attention"
     );
 
+    return;
+
   }
+
+
+  territoryStatus.textContent =
+    territorio.status || "-";
 
 }
 
 
-function renderizarMapa(territorio) {
+// ===============================
+// MAPA
+// ===============================
 
-  const mapa =
-    territorio.mapa;
+function renderizarMapa(
+  territorio
+) {
 
-
-  if (!mapa) {
-
-    mapWrapper.innerHTML = `
-      <div class="map-placeholder">
-
-        <strong>
-          Mapa ainda não cadastrado
-        </strong>
-
-        <span>
-          Território ${territorio.numero}
-        </span>
-
-      </div>
-    `;
-
+  if (!mapWrapper) {
     return;
   }
 
 
-  territoryMap.src =
-    mapa;
+  if (!territorio.mapa) {
+
+    mapWrapper.innerHTML = `
+      <p>
+        Mapa ainda não cadastrado.
+      </p>
+    `;
+
+    return;
+
+  }
 
 
-  territoryMap.alt =
-    `Mapa do território ${territorio.numero} - ${territorio.localidade}`;
+  mapWrapper.innerHTML = `
 
+    <button
+      type="button"
+      class="map-button"
+      onclick="abrirMapa()"
+      aria-label="Ampliar mapa do território"
+    >
 
-  territoryMap.onerror =
-    () => {
+      <img
+        src="${territorio.mapa}"
+        alt="Mapa do território ${territorio.numero}"
+        class="territory-map"
+      >
 
-      mapWrapper.innerHTML = `
-        <div class="map-placeholder">
+    </button>
 
-          <strong>
-            Não foi possível carregar o mapa
-          </strong>
-
-          <span>
-            Território ${territorio.numero}
-          </span>
-
-        </div>
-      `;
-
-    };
-
-
-  territoryMap.onclick =
-    () => abrirMapa(mapa);
+  `;
 
 }
 
 
-function renderizarSituacao(territorio) {
+// ===============================
+// SITUAÇÃO ATUAL
+// ===============================
+
+function renderizarSituacao(
+  territorio
+) {
 
   if (
-    territorio.status === "disponivel"
+    !currentStatus ||
+    !territoryActions
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    territorio.status ===
+    "disponivel"
   ) {
 
     currentStatus.innerHTML = `
 
-      <div class="status-info-row">
+      <div class="status-empty">
 
-        <span>
-          Situação
-        </span>
-
-        <strong>
-          Disponível para designação
-        </strong>
+        <p>
+          Este território está disponível para designação.
+        </p>
 
       </div>
 
     `;
-
-
-    if (
-      territorio.ultimaConclusao
-    ) {
-
-      currentStatus.innerHTML += `
-
-        <div class="status-info-row">
-
-          <span>
-            Última conclusão
-          </span>
-
-          <strong>
-            ${formatarData(
-              territorio.ultimaConclusao
-            )}
-          </strong>
-
-        </div>
-
-      `;
-
-    }
 
 
     territoryActions.innerHTML = `
@@ -283,57 +368,68 @@ function renderizarSituacao(territorio) {
     `;
 
     return;
+
   }
 
 
   if (
-    territorio.status === "uso"
+    territorio.status ===
+      "uso"
     ||
-    territorio.status === "atencao"
+    territorio.status ===
+      "atencao"
   ) {
 
     currentStatus.innerHTML = `
 
-      <div class="status-info-grid">
+      <div class="current-info">
 
-        <div class="status-info-box">
+        <div class="current-info-item">
 
           <span>
             Designado para
           </span>
 
           <strong>
-            ${territorio.responsavel || "-"}
+            ${
+              territorio.responsavel
+              ||
+              "-"
+            }
           </strong>
 
         </div>
 
 
-        <div class="status-info-box">
+        <div class="current-info-item">
 
           <span>
             Data da designação
           </span>
 
           <strong>
-            ${formatarData(
-              territorio.dataDesignacao
-            )}
+            ${
+              formatarData(
+                territorio.dataDesignacao
+              )
+            }
           </strong>
 
         </div>
 
 
-        <div class="status-info-box">
+        <div class="current-info-item">
 
           <span>
             Tempo em uso
           </span>
 
           <strong>
-            ${calcularDias(
-              territorio.dataDesignacao
-            )}
+            ${
+              calcularDias(
+                territorio.dataDesignacao
+              )
+            }
           </strong>
 
         </div>
@@ -355,12 +451,35 @@ function renderizarSituacao(territorio) {
 
     `;
 
+    return;
+
   }
+
+
+  currentStatus.innerHTML = `
+    <p>
+      Situação não identificada.
+    </p>
+  `;
+
+
+  territoryActions.innerHTML = "";
 
 }
 
 
-function renderizarHistorico(territorio) {
+// ===============================
+// HISTÓRICO
+// ===============================
+
+function renderizarHistorico(
+  territorio
+) {
+
+  if (!historyContent) {
+    return;
+  }
+
 
   if (
     !territorio.historico
@@ -369,12 +488,15 @@ function renderizarHistorico(territorio) {
   ) {
 
     historyContent.innerHTML = `
+
       <p>
         Ainda não há movimentações registradas neste território.
       </p>
+
     `;
 
     return;
+
   }
 
 
@@ -388,7 +510,10 @@ function renderizarHistorico(territorio) {
       movimentacao => {
 
         const item =
-          document.createElement("article");
+          document.createElement(
+            "article"
+          );
+
 
         item.classList.add(
           "history-item"
@@ -400,7 +525,11 @@ function renderizarHistorico(territorio) {
           <div class="history-item-header">
 
             <strong>
-              ${movimentacao.responsavel || "-"}
+              ${
+                movimentacao.responsavel
+                ||
+                "-"
+              }
             </strong>
 
           </div>
@@ -409,22 +538,30 @@ function renderizarHistorico(territorio) {
           <div class="history-item-info">
 
             <span>
+
               Designação:
               <strong>
-                ${formatarData(
-                  movimentacao.dataDesignacao
-                )}
+                ${
+                  formatarData(
+                    movimentacao.dataDesignacao
+                  )
+                }
               </strong>
+
             </span>
 
 
             <span>
+
               Conclusão:
               <strong>
-                ${formatarData(
-                  movimentacao.dataConclusao
-                )}
+                ${
+                  formatarData(
+                    movimentacao.dataConclusao
+                  )
+                }
               </strong>
+
             </span>
 
           </div>
@@ -442,10 +579,29 @@ function renderizarHistorico(territorio) {
 }
 
 
-function formatarData(data) {
+// ===============================
+// DATAS
+// ===============================
+
+function formatarData(
+  data
+) {
 
   if (!data) {
     return "-";
+  }
+
+
+  const partes =
+    data.split("-");
+
+
+  if (
+    partes.length !== 3
+  ) {
+
+    return data;
+
   }
 
 
@@ -453,24 +609,51 @@ function formatarData(data) {
     ano,
     mes,
     dia
-  ] = data.split("-");
+  ] = partes;
 
 
-  return `${dia}/${mes}/${ano}`;
+  return (
+    `${dia}/${mes}/${ano}`
+  );
 
 }
 
 
-function calcularDias(data) {
+function calcularDias(
+  dataDesignacao
+) {
 
-  if (!data) {
+  if (!dataDesignacao) {
     return "-";
   }
 
 
+  const partes =
+    dataDesignacao.split("-");
+
+
+  if (
+    partes.length !== 3
+  ) {
+
+    return "-";
+
+  }
+
+
+  const [
+    ano,
+    mes,
+    dia
+  ] =
+    partes.map(Number);
+
+
   const inicio =
     new Date(
-      `${data}T00:00:00`
+      ano,
+      mes - 1,
+      dia
     );
 
 
@@ -478,43 +661,39 @@ function calcularDias(data) {
     new Date();
 
 
-  hoje.setHours(
-    0,
-    0,
-    0,
-    0
-  );
+  const inicioDia =
+    new Date(
+      inicio.getFullYear(),
+      inicio.getMonth(),
+      inicio.getDate()
+    );
+
+
+  const hojeDia =
+    new Date(
+      hoje.getFullYear(),
+      hoje.getMonth(),
+      hoje.getDate()
+    );
 
 
   const diferenca =
-    hoje - inicio;
+    hojeDia.getTime()
+    -
+    inicioDia.getTime();
 
 
   const dias =
     Math.floor(
       diferenca /
-      (1000 * 60 * 60 * 24)
+      86400000
     );
 
 
-  if (
-    dias < 0
-  ) {
-    return "-";
-  }
+  if (dias === 1) {
 
-
-  if (
-    dias === 0
-  ) {
-    return "Hoje";
-  }
-
-
-  if (
-    dias === 1
-  ) {
     return "1 dia";
+
   }
 
 
@@ -523,25 +702,278 @@ function calcularDias(data) {
 }
 
 
-function abrirMapa(src) {
+function obterDataHoje() {
 
-  if (!src) {
+  const hoje =
+    new Date();
+
+
+  const ano =
+    hoje.getFullYear();
+
+
+  const mes =
+    String(
+      hoje.getMonth() + 1
+    ).padStart(
+      2,
+      "0"
+    );
+
+
+  const dia =
+    String(
+      hoje.getDate()
+    ).padStart(
+      2,
+      "0"
+    );
+
+
+  return (
+    `${ano}-${mes}-${dia}`
+  );
+
+}
+
+
+// ===============================
+// LOCAL STORAGE
+// ===============================
+
+function salvarDadosLocais() {
+
+  localStorage.setItem(
+    "territorios",
+    JSON.stringify(
+      territoriosCarregados
+    )
+  );
+
+}
+
+
+// ===============================
+// DESIGNAÇÃO
+// ===============================
+
+ function designarTerritorio() {
+
+  if (!territorioAtual) {
     return;
   }
 
 
-  mapModalImage.src =
-    src;
+  const modal =
+    document.getElementById(
+      "designationModal"
+    );
 
 
-  mapModal.classList.add(
+  const campoResponsavel =
+    document.getElementById(
+      "designationResponsible"
+    );
+
+
+  const campoData =
+    document.getElementById(
+      "designationDate"
+    );
+
+
+  if (
+    !modal
+    ||
+    !campoResponsavel
+    ||
+    !campoData
+  ) {
+    return;
+  }
+
+
+  campoResponsavel.value =
+    "";
+
+
+  campoData.value =
+    obterDataHoje();
+
+
+  modal.classList.add(
     "active"
   );
 
 
-  mapModal.setAttribute(
+  modal.setAttribute(
     "aria-hidden",
     "false"
+  );
+
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  campoResponsavel.focus();
+
+}
+
+
+
+
+// ===============================
+// CONCLUSÃO
+// ===============================
+
+function concluirTerritorio() {
+
+  if (!territorioAtual) {
+    return;
+  }
+
+
+  if (
+    territorioAtual.status !==
+      "uso"
+    &&
+    territorioAtual.status !==
+      "atencao"
+  ) {
+
+    alert(
+      "Este território não está em uso."
+    );
+
+    return;
+
+  }
+
+
+  const confirmar =
+    confirm(
+      `Concluir o território ${territorioAtual.numero}?`
+    );
+
+
+  if (!confirmar) {
+    return;
+  }
+
+
+  const movimentacao = {
+
+    responsavel:
+      territorioAtual.responsavel
+      ||
+      "-",
+
+    dataDesignacao:
+      territorioAtual.dataDesignacao
+      ||
+      null,
+
+    dataConclusao:
+      obterDataHoje()
+
+  };
+
+
+  if (
+    !Array.isArray(
+      territorioAtual.historico
+    )
+  ) {
+
+    territorioAtual.historico =
+      [];
+
+  }
+
+
+  territorioAtual.historico.push(
+    movimentacao
+  );
+
+
+  territorioAtual.ultimaConclusao =
+    movimentacao.dataConclusao;
+
+
+  territorioAtual.status =
+    "disponivel";
+
+
+  territorioAtual.responsavel =
+    null;
+
+
+  territorioAtual.dataDesignacao =
+    null;
+
+
+  salvarDadosLocais();
+
+
+  renderizarTerritorio(
+    territorioAtual
+  );
+
+}
+
+
+// ===============================
+// MODAL DO MAPA
+// ===============================
+
+function abrirMapa() {
+
+  if (
+    !territorioAtual
+    ||
+    !territorioAtual.mapa
+  ) {
+
+    return;
+
+  }
+
+
+  const mapModal =
+    document.getElementById(
+      "mapModal"
+    );
+
+
+  const mapModalImage =
+    document.getElementById(
+      "mapModalImage"
+    );
+
+
+  if (
+    !mapModal
+    ||
+    !mapModalImage
+  ) {
+
+    return;
+
+  }
+
+
+  mapModalImage.src =
+    territorioAtual.mapa;
+
+
+  mapModalImage.alt =
+    `Mapa ampliado do território ${territorioAtual.numero}`;
+
+
+  mapModal.classList.add(
+    "active"
   );
 
 
@@ -554,19 +986,20 @@ function abrirMapa(src) {
 
 function fecharMapa() {
 
+  const mapModal =
+    document.getElementById(
+      "mapModal"
+    );
+
+
+  if (!mapModal) {
+    return;
+  }
+
+
   mapModal.classList.remove(
     "active"
   );
-
-
-  mapModal.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
-
-  mapModalImage.src =
-    "";
 
 
   document.body.classList.remove(
@@ -576,61 +1009,83 @@ function fecharMapa() {
 }
 
 
-function designarTerritorio() {
+// ===============================
+// ERROS
+// ===============================
 
-  alert(
-    "Na próxima etapa criaremos a designação do território."
-  );
-
-}
-
-
-function concluirTerritorio() {
-
-  alert(
-    "Na próxima etapa criaremos a conclusão do território."
-  );
-
-}
-
-
-function mostrarErro(mensagem) {
-
-  territoryTitle.textContent =
-    "Erro";
-
-
-  territoryLocation.textContent =
-    mensagem;
-
-
-  territoryStatus.textContent =
-    "";
-
-
-  mapWrapper.innerHTML =
-    "";
-
-
-  currentStatus.innerHTML =
-    "";
-
-
-  territoryActions.innerHTML =
-    "";
-
-
-  historyContent.innerHTML =
-    "";
-
-}
-
-
-if (
-  typeof mapModalClose !== "undefined"
-  &&
-  mapModalClose
+function mostrarErro(
+  mensagem
 ) {
+
+  if (territoryTitle) {
+
+    territoryTitle.textContent =
+      "Erro";
+
+  }
+
+
+  if (territoryLocation) {
+
+    territoryLocation.textContent =
+      mensagem;
+
+  }
+
+
+  if (territoryStatus) {
+
+    territoryStatus.textContent =
+      "";
+
+  }
+
+
+  if (mapWrapper) {
+
+    mapWrapper.innerHTML =
+      "";
+
+  }
+
+
+  if (currentStatus) {
+
+    currentStatus.innerHTML =
+      "";
+
+  }
+
+
+  if (territoryActions) {
+
+    territoryActions.innerHTML =
+      "";
+
+  }
+
+
+  if (historyContent) {
+
+    historyContent.innerHTML =
+      "";
+
+  }
+
+}
+
+
+// ===============================
+// EVENTOS DO MODAL
+// ===============================
+
+const mapModalClose =
+  document.getElementById(
+    "mapModalClose"
+  );
+
+
+if (mapModalClose) {
 
   mapModalClose.addEventListener(
     "click",
@@ -640,18 +1095,21 @@ if (
 }
 
 
-if (
-  typeof mapModal !== "undefined"
-  &&
-  mapModal
-) {
+const mapModal =
+  document.getElementById(
+    "mapModal"
+  );
+
+
+if (mapModal) {
 
   mapModal.addEventListener(
     "click",
-    event => {
+    evento => {
 
       if (
-        event.target === mapModal
+        evento.target ===
+        mapModal
       ) {
 
         fecharMapa();
@@ -666,18 +1124,11 @@ if (
 
 document.addEventListener(
   "keydown",
-  event => {
+  evento => {
 
     if (
-      event.key === "Escape"
-      &&
-      typeof mapModal !== "undefined"
-      &&
-      mapModal
-      &&
-      mapModal.classList.contains(
-        "active"
-      )
+      evento.key ===
+      "Escape"
     ) {
 
       fecharMapa();
@@ -687,6 +1138,149 @@ document.addEventListener(
   }
 );
 
+function fecharModalDesignacao() {
 
+  const modal =
+    document.getElementById(
+      "designationModal"
+    );
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  modal.classList.remove(
+    "active"
+  );
+
+
+  modal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+}
+
+
+const designationForm =
+  document.getElementById(
+    "designationForm"
+  );
+
+
+const designationModalClose =
+  document.getElementById(
+    "designationModalClose"
+  );
+
+
+const designationCancel =
+  document.getElementById(
+    "designationCancel"
+  );
+
+
+if (designationModalClose) {
+
+  designationModalClose.addEventListener(
+    "click",
+    fecharModalDesignacao
+  );
+
+}
+
+
+if (designationCancel) {
+
+  designationCancel.addEventListener(
+    "click",
+    fecharModalDesignacao
+  );
+
+}
+
+
+if (designationForm) {
+
+  designationForm.addEventListener(
+    "submit",
+    evento => {
+
+      evento.preventDefault();
+
+
+      if (!territorioAtual) {
+        return;
+      }
+
+
+      const responsavel =
+        document
+          .getElementById(
+            "designationResponsible"
+          )
+          .value
+          .trim();
+
+
+      const dataDesignacao =
+        document
+          .getElementById(
+            "designationDate"
+          )
+          .value;
+
+
+      if (
+        !responsavel
+        ||
+        !dataDesignacao
+      ) {
+
+        alert(
+          "Preencha o responsável e a data da designação."
+        );
+
+        return;
+
+      }
+
+
+      territorioAtual.status =
+        "uso";
+
+
+      territorioAtual.responsavel =
+        responsavel;
+
+
+      territorioAtual.dataDesignacao =
+        dataDesignacao;
+
+
+      salvarDadosLocais();
+
+
+      fecharModalDesignacao();
+
+
+      renderizarTerritorio(
+        territorioAtual
+      );
+
+    }
+  );
+
+}
+// ===============================
+// INICIALIZAÇÃO
+// ===============================
 
 carregarTerritorio();

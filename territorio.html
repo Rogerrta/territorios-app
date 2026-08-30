@@ -102,7 +102,8 @@
           alt="Mapa do território"
         >
 
-     
+      </div>
+
     </section>
 
 
@@ -173,9 +174,109 @@
   </main>
 
 
-  <!-- MODAL DO MAPA -->
+  <!-- MODAL DE DESIGNAÇÃO -->
 
-  
+  <div
+    class="modal"
+    id="designationModal"
+    aria-hidden="true"
+  >
+
+    <div class="modal-backdrop"></div>
+
+
+    <div
+      class="modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="designationModalTitle"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <p class="eyebrow">
+            Designação
+          </p>
+
+          <h2 id="designationModalTitle">
+            Designar território
+          </h2>
+
+        </div>
+
+        <button
+          type="button"
+          class="modal-close"
+          id="designationModalClose"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="designationForm">
+
+        <div class="form-group">
+
+          <label for="designationResponsible">
+            Responsável
+          </label>
+
+          <input
+            type="text"
+            id="designationResponsible"
+            name="responsavel"
+            autocomplete="off"
+            required
+          >
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="designationDate">
+            Data da designação
+          </label>
+
+          <input
+            type="date"
+            id="designationDate"
+            name="dataDesignacao"
+            required
+          >
+
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="btn-secondary"
+            id="designationCancel"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="btn-primary"
+          >
+            Confirmar designação
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
 
 
   <script src="assets/js/territorio.js"></script>

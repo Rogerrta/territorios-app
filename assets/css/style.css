@@ -366,9 +366,15 @@ select {
     width: 100%;
   }
 
-  .territories-grid {
+    .territories-grid {
     grid-template-columns: 1fr;
   }
+
+}
+
+/* ========================================
+   DETALHE DO TERRITÓRIO
+======================================== */
 
   /* ========================================
    DETALHE DO TERRITÓRIO
@@ -847,6 +853,113 @@ body.modal-open {
   }
 
 }
+/* =========================
+   MODAL DE DESIGNAÇÃO
+========================= */
 
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 30, 30, 0.55);
+}
+
+.modal-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.modal-header h2 {
+  margin: 4px 0 0;
+}
+
+.modal-close {
+  border: 0;
+  background: transparent;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  color: #555;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  font-weight: 600;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d7dddd;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.form-group input:focus {
+  outline: 2px solid rgba(47, 93, 98, 0.22);
+  border-color: #2f5d62;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+
+  .modal {
+    padding: 16px;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
 
 }
+
