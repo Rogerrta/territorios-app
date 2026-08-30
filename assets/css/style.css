@@ -305,6 +305,8 @@ select {
   background: #f3f7f7;
 }
 
+
+
 /* RESPONSIVO */
 
 @media (max-width: 900px) {
@@ -1128,6 +1130,17 @@ body.modal-open {
 /* CELULAR */
 
 @media (max-width: 600px) {
+
+  .header-actions .btn-primary {
+  min-width: 190px;
+  min-height: 46px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+}
 
   .movement-modal {
     padding: 14px;
