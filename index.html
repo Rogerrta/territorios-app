@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Controle de Territórios</title>
+
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Gestão de territórios</p>
+      <h1>Controle de Territórios</h1>
+    </div>
+
+    <button class="btn-primary">
+      + Nova movimentação
+    </button>
+  </header>
+
+  <main class="container">
+
+    <section class="summary-grid">
+
+      <article class="summary-card">
+        <span class="summary-label">Total</span>
+        <strong class="summary-number">32</strong>
+        <span class="summary-text">territórios cadastrados</span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-label">Disponíveis</span>
+        <strong class="summary-number">20</strong>
+        <span class="summary-text">prontos para designação</span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-label">Em uso</span>
+        <strong class="summary-number">10</strong>
+        <span class="summary-text">territórios designados</span>
+      </article>
+
+      <article class="summary-card attention">
+        <span class="summary-label">Atenção</span>
+        <strong class="summary-number">2</strong>
+        <span class="summary-text">há mais tempo em uso</span>
+      </article>
+
+    </section>
+
+    <section class="territories-section">
+
+      <div class="section-header">
+
+        <div>
+          <p class="eyebrow">Visão geral</p>
+          <h2>Territórios</h2>
+        </div>
+
+        <div class="filters">
+
+          <input
+            type="search"
+            id="search"
+            placeholder="Buscar território..."
+          >
+
+          <select id="statusFilter">
+            <option value="todos">Todos</option>
+            <option value="disponivel">Disponíveis</option>
+            <option value="uso">Em uso</option>
+            <option value="atencao">Atenção</option>
+          </select>
+
+        </div>
+
+      </div>
+
+      <div class="territories-grid">
+
+        <article class="territory-card">
+
+          <div class="territory-top">
+            <span class="territory-number">Território 01</span>
+            <span class="status available">Disponível</span>
+          </div>
+
+          <h3>Vila Cerne</h3>
+
+          <p>
+            Última conclusão:
+            <strong>18/08/2026</strong>
+          </p>
+
+          <button class="btn-secondary">
+            Abrir território
+          </button>
+
+        </article>
+
+        <article class="territory-card">
+
+          <div class="territory-top">
+            <span class="territory-number">Território 22</span>
+            <span class="status in-use">Em uso</span>
+          </div>
+
+          <h3>Central Park</h3>
+
+          <p>
+            Designado para:
+            <strong>João Silva</strong>
+          </p>
+
+          <p>
+            Desde:
+            <strong>25/08/2026</strong>
+          </p>
+
+          <button class="btn-secondary">
+            Abrir território
+          </button>
+
+        </article>
+
+        <article class="territory-card">
+
+          <div class="territory-top">
+            <span class="territory-number">Território 31</span>
+            <span class="status warning">Atenção</span>
+          </div>
+
+          <h3>Mato Grande</h3>
+
+          <p>
+            Designado para:
+            <strong>Carlos Souza</strong>
+          </p>
+
+          <p>
+            Há:
+            <strong>28 dias</strong>
+          </p>
+
+          <button class="btn-secondary">
+            Abrir território
+          </button>
+
+        </article>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="assets/js/app.js"></script>
+
+</body>
+</html>
