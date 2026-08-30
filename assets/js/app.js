@@ -1,5 +1,10 @@
 let territorios = [];
 
+
+// ===============================
+// ELEMENTOS DA PÁGINA
+// ===============================
+
 const grid =
   document.getElementById(
     "territoriesGrid"
@@ -34,6 +39,12 @@ const totalAtencao =
   document.getElementById(
     "totalAtencao"
   );
+
+
+// ===============================
+// ELEMENTOS DO MODAL
+// ===============================
+
 const newMovementBtn =
   document.getElementById(
     "newMovementBtn"
@@ -79,6 +90,7 @@ const movementDate =
     "movementDate"
   );
 
+
 // ===============================
 // CARREGAMENTO
 // ===============================
@@ -106,8 +118,8 @@ async function carregarTerritorios() {
       await resposta.json();
 
 
-    // Procura alterações salvas
-    // no navegador.
+    // Verifica se existem alterações
+    // salvas no navegador.
 
     const dadosLocais =
       localStorage.getItem(
@@ -161,6 +173,22 @@ async function carregarTerritorios() {
     }
 
   }
+
+}
+
+
+// ===============================
+// SALVAR
+// ===============================
+
+function salvarTerritorios() {
+
+  localStorage.setItem(
+    "territorios",
+    JSON.stringify(
+      territorios
+    )
+  );
 
 }
 
@@ -361,7 +389,6 @@ function renderizarTerritorios(
 
           </p>
 
-
           <p>
 
             Desde:
@@ -405,7 +432,6 @@ function renderizarTerritorios(
             </strong>
 
           </p>
-
 
           <p>
 
@@ -691,30 +717,49 @@ function abrirTerritorio(
 
 }
 
+
 // ===============================
-// NOVA MOVIMENTAÇÃO
+// DATA DE HOJE
 // ===============================
 
 function obterDataHoje() {
 
-  const hoje = new Date();
+  const hoje =
+    new Date();
+
 
   const ano =
     hoje.getFullYear();
 
+
   const mes =
     String(
       hoje.getMonth() + 1
-    ).padStart(2, "0");
+    ).padStart(
+      2,
+      "0"
+    );
+
 
   const dia =
     String(
       hoje.getDate()
-    ).padStart(2, "0");
+    ).padStart(
+      2,
+      "0"
+    );
 
-  return `${ano}-${mes}-${dia}`;
+
+  return (
+    `${ano}-${mes}-${dia}`
+  );
+
 }
 
+
+// ===============================
+// NOVA MOVIMENTAÇÃO
+// ===============================
 
 function abrirNovaMovimentacao() {
 
@@ -722,7 +767,9 @@ function abrirNovaMovimentacao() {
     !newMovementModal ||
     !movementTerritory
   ) {
+
     return;
+
   }
 
 
@@ -749,11 +796,14 @@ function abrirNovaMovimentacao() {
           "option"
         );
 
+
       option.value =
         territorio.id;
 
+
       option.textContent =
         `Território ${territorio.numero} — ${territorio.localidade}`;
+
 
       movementTerritory.appendChild(
         option
@@ -764,32 +814,37 @@ function abrirNovaMovimentacao() {
 
 
   if (movementResponsible) {
-    movementResponsible.value = "";
+
+    movementResponsible.value =
+      "";
+
   }
 
 
   if (movementDate) {
+
     movementDate.value =
       obterDataHoje();
+
   }
 
 
   newMovementModal.hidden =
     false;
 
+
   newMovementModal.setAttribute(
     "aria-hidden",
     "false"
   );
+
 
   document.body.classList.add(
     "modal-open"
   );
 
 
-  if (movementTerritory) {
-    movementTerritory.focus();
-  }
+  movementTerritory.focus();
 
 }
 
@@ -797,17 +852,21 @@ function abrirNovaMovimentacao() {
 function fecharNovaMovimentacao() {
 
   if (!newMovementModal) {
+
     return;
+
   }
 
 
   newMovementModal.hidden =
     true;
 
+
   newMovementModal.setAttribute(
     "aria-hidden",
     "true"
   );
+
 
   document.body.classList.remove(
     "modal-open"
@@ -816,17 +875,9 @@ function fecharNovaMovimentacao() {
 }
 
 
-function salvarTerritorios() {
-
-  localStorage.setItem(
-    "territorios",
-    JSON.stringify(
-      territorios
-    )
-  );
-
-}
-
+// ===============================
+// CONFIRMAR NOVA MOVIMENTAÇÃO
+// ===============================
 
 function confirmarNovaMovimentacao(
   evento
@@ -840,9 +891,11 @@ function confirmarNovaMovimentacao(
       movementTerritory.value
     );
 
+
   const responsavel =
     movementResponsible.value
       .trim();
+
 
   const dataDesignacao =
     movementDate.value;
@@ -859,6 +912,7 @@ function confirmarNovaMovimentacao(
     );
 
     return;
+
   }
 
 
@@ -877,6 +931,7 @@ function confirmarNovaMovimentacao(
     );
 
     return;
+
   }
 
 
@@ -890,14 +945,17 @@ function confirmarNovaMovimentacao(
     );
 
     return;
+
   }
 
 
   territorio.status =
     "uso";
 
+
   territorio.responsavel =
     responsavel;
+
 
   territorio.dataDesignacao =
     dataDesignacao;
@@ -918,8 +976,9 @@ function confirmarNovaMovimentacao(
 
 }
 
+
 // ===============================
-// EVENTOS
+// EVENTOS DOS FILTROS
 // ===============================
 
 if (searchInput) {
@@ -941,232 +1000,80 @@ if (statusFilter) {
 
 }
 
+
 // ===============================
-// NOVA MOVIMENTAÇÃO
+// EVENTOS DO MODAL
 // ===============================
 
-function obterDataHoje() {
+if (newMovementBtn) {
 
-  const hoje = new Date();
+  newMovementBtn.addEventListener(
+    "click",
+    abrirNovaMovimentacao
+  );
 
-  const ano =
-    hoje.getFullYear();
-
-  const mes =
-    String(
-      hoje.getMonth() + 1
-    ).padStart(2, "0");
-
-  const dia =
-    String(
-      hoje.getDate()
-    ).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
 }
 
 
-function abrirNovaMovimentacao() {
+if (newMovementClose) {
 
-  if (
-    !newMovementModal ||
-    !movementTerritory
-  ) {
-    return;
-  }
+  newMovementClose.addEventListener(
+    "click",
+    fecharNovaMovimentacao
+  );
 
-
-  movementTerritory.innerHTML = `
-    <option value="">
-      Selecione um território
-    </option>
-  `;
+}
 
 
-  const disponiveis =
-    territorios.filter(
-      territorio =>
-        territorio.status ===
-        "disponivel"
-    );
+if (newMovementCancel) {
+
+  newMovementCancel.addEventListener(
+    "click",
+    fecharNovaMovimentacao
+  );
+
+}
 
 
-  disponiveis.forEach(
-    territorio => {
+if (newMovementOverlay) {
 
-      const option =
-        document.createElement(
-          "option"
-        );
+  newMovementOverlay.addEventListener(
+    "click",
+    fecharNovaMovimentacao
+  );
 
-      option.value =
-        territorio.id;
+}
 
-      option.textContent =
-        `Território ${territorio.numero} — ${territorio.localidade}`;
 
-      movementTerritory.appendChild(
-        option
-      );
+if (newMovementForm) {
+
+  newMovementForm.addEventListener(
+    "submit",
+    confirmarNovaMovimentacao
+  );
+
+}
+
+
+// Fecha o modal com a tecla ESC.
+
+document.addEventListener(
+  "keydown",
+  evento => {
+
+    if (
+      evento.key === "Escape" &&
+      newMovementModal &&
+      !newMovementModal.hidden
+    ) {
+
+      fecharNovaMovimentacao();
 
     }
-  );
 
-
-  if (movementResponsible) {
-    movementResponsible.value = "";
   }
+);
 
-
-  if (movementDate) {
-    movementDate.value =
-      obterDataHoje();
-  }
-
-
-  newMovementModal.hidden =
-    false;
-
-  newMovementModal.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-  document.body.classList.add(
-    "modal-open"
-  );
-
-
-  if (movementTerritory) {
-    movementTerritory.focus();
-  }
-
-}
-
-
-function fecharNovaMovimentacao() {
-
-  if (!newMovementModal) {
-    return;
-  }
-
-
-  newMovementModal.hidden =
-    true;
-
-  newMovementModal.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
-  document.body.classList.remove(
-    "modal-open"
-  );
-
-}
-
-
-function salvarTerritorios() {
-
-  localStorage.setItem(
-    "territorios",
-    JSON.stringify(
-      territorios
-    )
-  );
-
-}
-
-
-function confirmarNovaMovimentacao(
-  evento
-) {
-
-  evento.preventDefault();
-
-
-  const territorioId =
-    Number(
-      movementTerritory.value
-    );
-
-  const responsavel =
-    movementResponsible.value
-      .trim();
-
-  const dataDesignacao =
-    movementDate.value;
-
-
-  if (
-    !territorioId ||
-    !responsavel ||
-    !dataDesignacao
-  ) {
-
-    alert(
-      "Preencha todos os campos."
-    );
-
-    return;
-  }
-
-
-  const territorio =
-    territorios.find(
-      item =>
-        Number(item.id) ===
-        territorioId
-    );
-
-
-  if (!territorio) {
-
-    alert(
-      "Território não encontrado."
-    );
-
-    return;
-  }
-
-
-  if (
-    territorio.status !==
-    "disponivel"
-  ) {
-
-    alert(
-      "Este território não está disponível."
-    );
-
-    return;
-  }
-
-
-  territorio.status =
-    "uso";
-
-  territorio.responsavel =
-    responsavel;
-
-  territorio.dataDesignacao =
-    dataDesignacao;
-
-
-  salvarTerritorios();
-
-  atualizarResumo();
-
-  aplicarFiltros();
-
-  fecharNovaMovimentacao();
-
-
-  alert(
-    `Território ${territorio.numero} designado para ${responsavel}.`
-  );
-
-}
 
 // ===============================
 // INICIALIZAÇÃO
