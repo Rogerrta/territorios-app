@@ -73,8 +73,14 @@ async function carregarTerritorio() {
     }
 
 
-    territoriosCarregados =
+    // Dados oficiais do projeto
+    const territoriosBase =
       await resposta.json();
+
+
+    // Começa utilizando os dados do JSON
+    territoriosCarregados =
+      territoriosBase;
 
 
     const dadosLocais =
@@ -87,10 +93,64 @@ async function carregarTerritorio() {
 
       try {
 
-        territoriosCarregados =
+        const territoriosLocais =
           JSON.parse(
             dadosLocais
           );
+
+
+        /*
+         * Mescla os dados locais com os dados
+         * oficiais do JSON.
+         *
+         * Status, responsável, datas e histórico
+         * podem vir do LocalStorage.
+         *
+         * Número, localidade e mapa sempre vêm
+         * do JSON atual.
+         */
+
+        territoriosCarregados =
+          territoriosBase.map(
+            territorioBase => {
+
+              const territorioLocal =
+                territoriosLocais.find(
+                  item =>
+                    Number(item.id) ===
+                    Number(territorioBase.id)
+                );
+
+
+              if (!territorioLocal) {
+
+                return territorioBase;
+
+              }
+
+
+              return {
+
+                ...territorioBase,
+                ...territorioLocal,
+
+                id:
+                  territorioBase.id,
+
+                numero:
+                  territorioBase.numero,
+
+                localidade:
+                  territorioBase.localidade,
+
+                mapa:
+                  territorioBase.mapa
+
+              };
+
+            }
+          );
+
 
       } catch (erro) {
 
@@ -142,7 +202,6 @@ async function carregarTerritorio() {
   }
 
 }
-
 
 // ===============================
 // RENDERIZAÇÃO PRINCIPAL
