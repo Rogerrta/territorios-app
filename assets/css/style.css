@@ -378,10 +378,6 @@ select {
    DETALHE DO TERRITÓRIO
 ======================================== */
 
-  /* ========================================
-   DETALHE DO TERRITÓRIO
-======================================== */
-
 .territory-detail-card {
   background: var(--surface);
 
@@ -1131,16 +1127,18 @@ body.modal-open {
 
 @media (max-width: 600px) {
 
-  .header-actions .btn-primary {
-  min-width: 190px;
-  min-height: 46px;
+  .btn-secondary {
+    background: #2f5d62;
+    color: #ffffff;
+    border-color: #2f5d62;
 
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+    text-decoration: color;
 
-  text-decoration: none;
+   
+   
 }
+}
+
 
   .movement-modal {
     padding: 14px;
@@ -1158,4 +1156,3 @@ body.modal-open {
     width: 100%;
   }
 
-}

@@ -149,17 +149,19 @@ function obterAnoServicoAtual() {
 
 }
 
-
 function preencherAnosServico() {
 
   if (!serviceYear) {
     return;
   }
 
-
   const atual =
     obterAnoServicoAtual();
 
+  const anoSalvo =
+    localStorage.getItem(
+      "anoServicoSelecionado"
+    );
 
   const [
     inicioAtual
@@ -168,13 +170,8 @@ function preencherAnosServico() {
       .split("/")
       .map(Number);
 
-
   serviceYear.innerHTML =
     "";
-
-
-  // Ano anterior, atual
-  // e dois anos seguintes.
 
   for (
     let inicio =
@@ -191,30 +188,34 @@ function preencherAnosServico() {
         "option"
       );
 
-
     option.value =
       `${inicio}/${inicio + 1}`;
 
-
     option.textContent =
       `${inicio}/${inicio + 1}`;
-
-
-    if (
-      option.value === atual
-    ) {
-
-      option.selected =
-        true;
-
-    }
-
 
     serviceYear.appendChild(
       option
     );
 
   }
+
+  const anoSelecionado =
+    anoSalvo || atual;
+
+  const existeOpcao =
+    Array.from(
+      serviceYear.options
+    ).some(
+      option =>
+        option.value ===
+        anoSelecionado
+    );
+
+  serviceYear.value =
+    existeOpcao
+      ? anoSelecionado
+      : atual;
 
 }
 
@@ -936,7 +937,16 @@ if (serviceYear) {
 
   serviceYear.addEventListener(
     "change",
-    renderizarRelatorio
+    () => {
+
+      localStorage.setItem(
+        "anoServicoSelecionado",
+        serviceYear.value
+      );
+
+      renderizarRelatorio();
+
+    }
   );
 
 }
