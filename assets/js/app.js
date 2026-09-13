@@ -99,6 +99,159 @@ const movementDate =
 
 
 // ===============================
+// NORMALIZAÇÃO DE STATUS
+// ===============================
+
+function normalizarStatusSupabase(
+  status
+) {
+
+  if (!status) {
+    return null;
+  }
+
+
+  const valor =
+    String(status)
+      .trim()
+      .toLowerCase();
+
+
+  if (
+    valor === "disponivel"
+    ||
+    valor === "disponível"
+  ) {
+
+    return "disponivel";
+
+  }
+
+
+  if (
+    valor === "em uso"
+    ||
+    valor === "uso"
+  ) {
+
+    return "uso";
+
+  }
+
+
+  if (
+    valor === "atencao"
+    ||
+    valor === "atenção"
+  ) {
+
+    return "atencao";
+
+  }
+
+
+  return valor;
+
+}
+
+
+// ===============================
+// CARREGAR DADOS DO SUPABASE
+// ===============================
+
+async function carregarTerritoriosSupabase() {
+
+  if (
+    typeof supabaseClient ===
+    "undefined"
+  ) {
+
+    console.warn(
+      "Supabase não está disponível."
+    );
+
+    return {
+      territorios: [],
+      designacoes: []
+    };
+
+  }
+
+
+  const [
+    respostaTerritorios,
+    respostaDesignacoes
+  ] =
+    await Promise.all([
+      supabaseClient
+        .from(
+          "territorios"
+        )
+        .select(
+          "*"
+        ),
+
+      supabaseClient
+        .from(
+          "Designacoes"
+        )
+        .select(
+          "*"
+        )
+        .is(
+          "data_devolucao",
+          null
+        )
+        .order(
+          "data_retirada",
+          {
+            ascending: false
+          }
+        )
+    ]);
+
+
+  if (
+    respostaTerritorios.error
+  ) {
+
+    console.error(
+      "Erro ao carregar territórios do Supabase:",
+      respostaTerritorios.error
+    );
+
+  }
+
+
+  if (
+    respostaDesignacoes.error
+  ) {
+
+    console.error(
+      "Erro ao carregar designações do Supabase:",
+      respostaDesignacoes.error
+    );
+
+  }
+
+
+  return {
+
+    territorios:
+      respostaTerritorios.data
+      ||
+      [],
+
+    designacoes:
+      respostaDesignacoes.data
+      ||
+      []
+
+  };
+
+}
+
+// ===============================
 // CARREGAMENTO
 // ===============================
 
@@ -121,41 +274,104 @@ async function carregarTerritorios() {
     }
 
 
-    territorios =
+    const territoriosBase =
       await resposta.json();
 
 
-    // Verifica se existem alterações
-    // salvas no navegador.
+         const dadosSupabase =
+         await carregarTerritoriosSupabase();
 
-    const dadosLocais =
-      localStorage.getItem(
-        "territorios"
+
+const territoriosSupabase =
+  dadosSupabase.territorios;
+
+
+const designacoesAtivas =
+  dadosSupabase.designacoes;
+
+
+
+    territorios =
+      territoriosBase.map(
+        territorioBase => {
+
+          const registroSupabase =
+            territoriosSupabase.find(
+              item =>
+                Number(item.numero) ===
+                Number(territorioBase.numero)
+            );
+            const designacaoAtiva =
+  registroSupabase
+    ? designacoesAtivas.find(
+        item =>
+          Number(item.territorio_id) ===
+          Number(registroSupabase.id)
+      )
+    : null;
+
+          if (!registroSupabase) {
+
+            return territorioBase;
+
+          }
+
+
+          return {
+
+  ...territorioBase,
+
+  supabaseId:
+    registroSupabase.id,
+
+  status:
+    normalizarStatusSupabase(
+      registroSupabase.status
+    )
+    ||
+    territorioBase.status,
+
+  responsavel:
+    designacaoAtiva
+      ? designacaoAtiva.responsavel
+      : null,
+
+  dataDesignacao:
+    designacaoAtiva
+      ? designacaoAtiva.data_retirada
+      : null,
+
+  designacaoId:
+    designacaoAtiva
+      ? designacaoAtiva.id
+      : null,
+
+  ultimaConclusao:
+    registroSupabase.ultima_conclusao
+    ||
+    territorioBase.ultimaConclusao
+    ||
+    null
+
+};
+
+        }
       );
 
 
-    if (dadosLocais) {
-
-      try {
-
-        territorios =
-          JSON.parse(
-            dadosLocais
-          );
-
-      } catch (erro) {
-
-        console.warn(
-          "Não foi possível carregar os dados locais.",
-          erro
-        );
-
-      }
-
-    }
+    /*
+     * Nesta etapa não deixamos mais o
+     * LocalStorage sobrescrever o estado
+     * vindo do Supabase.
+     *
+     * O JSON continua sendo a base para
+     * número, localidade, mapa e os 32
+     * territórios cadastrados.
+     */
 
 
     atualizarResumo();
+
 
     renderizarTerritorios(
       territorios
@@ -185,10 +401,19 @@ async function carregarTerritorios() {
 
 
 // ===============================
-// SALVAR
+// SALVAR LOCALMENTE
 // ===============================
 
 function salvarTerritorios() {
+
+  /*
+   * Mantida temporariamente por compatibilidade
+   * com outras partes do projeto.
+   *
+   * À medida que migrarmos as movimentações
+   * para o Supabase, esta função deixará
+   * de ser necessária.
+   */
 
   localStorage.setItem(
     "territorios",
@@ -198,8 +423,6 @@ function salvarTerritorios() {
   );
 
 }
-
-
 // ===============================
 // FORMATAÇÃO DE DATA
 // ===============================
@@ -260,7 +483,8 @@ function calcularDiasNumero(
 
 
   if (
-    partes.length !== 3 ||
+    partes.length !== 3
+    ||
     partes.some(
       parte =>
         Number.isNaN(parte)
@@ -268,6 +492,7 @@ function calcularDiasNumero(
   ) {
 
     return 0;
+
   }
 
 
@@ -277,10 +502,6 @@ function calcularDiasNumero(
     dia
   ] = partes;
 
-
-  // Trabalhamos com UTC aqui para evitar
-  // diferenças causadas por horário de verão
-  // ou mudança de fuso.
 
   const inicio =
     Date.UTC(
@@ -312,9 +533,6 @@ function calcularDiasNumero(
       86400000
     );
 
-
-  // Evita mostrar número negativo
-  // se uma data futura for informada.
 
   return Math.max(
     0,
@@ -381,8 +599,10 @@ function obterStatusEfetivo(
 
 
     if (
+      territorio.dataDesignacao
+      &&
       diasUso >=
-      LIMITE_ATENCAO_DIAS
+        LIMITE_ATENCAO_DIAS
     ) {
 
       return "atencao";
@@ -394,9 +614,6 @@ function obterStatusEfetivo(
 
   }
 
-
-  // Compatibilidade com algum dado antigo
-  // que ainda esteja salvo como "atencao".
 
   if (
     territorio.status ===
@@ -500,7 +717,8 @@ function renderizarTerritorios(
 
 
   if (
-    !lista ||
+    !lista
+    ||
     lista.length === 0
   ) {
 
@@ -540,8 +758,6 @@ function renderizarTerritorios(
       let detalhes = "";
 
 
-      // DISPONÍVEL
-
       if (
         statusEfetivo ===
         "disponivel"
@@ -549,6 +765,7 @@ function renderizarTerritorios(
 
         statusTexto =
           "Disponível";
+
 
         statusClasse =
           "available";
@@ -565,8 +782,6 @@ function renderizarTerritorios(
       }
 
 
-      // EM USO
-
       if (
         statusEfetivo ===
         "uso"
@@ -574,6 +789,7 @@ function renderizarTerritorios(
 
         statusTexto =
           "Em uso";
+
 
         statusClasse =
           "in-use";
@@ -627,8 +843,6 @@ function renderizarTerritorios(
       }
 
 
-      // ATENÇÃO
-
       if (
         statusEfetivo ===
         "atencao"
@@ -636,6 +850,7 @@ function renderizarTerritorios(
 
         statusTexto =
           "Atenção";
+
 
         statusClasse =
           "warning";
@@ -739,8 +954,6 @@ function renderizarTerritorios(
   );
 
 }
-
-
 // ===============================
 // FILTROS
 // ===============================
@@ -880,7 +1093,8 @@ function obterDataHoje() {
 function abrirNovaMovimentacao() {
 
   if (
-    !newMovementModal ||
+    !newMovementModal
+    ||
     !movementTerritory
   ) {
 
@@ -994,10 +1208,33 @@ function fecharNovaMovimentacao() {
 
 
 // ===============================
+// BUSCAR ID DO SUPABASE
+// ===============================
+
+function obterSupabaseIdTerritorio(
+  territorio
+) {
+
+  if (!territorio) {
+    return null;
+  }
+
+
+  if (territorio.supabaseId) {
+
+    return territorio.supabaseId;
+
+  }
+
+
+  return null;
+
+}
+// ===============================
 // CONFIRMAR NOVA MOVIMENTAÇÃO
 // ===============================
 
-function confirmarNovaMovimentacao(
+async function confirmarNovaMovimentacao(
   evento
 ) {
 
@@ -1020,8 +1257,10 @@ function confirmarNovaMovimentacao(
 
 
   if (
-    !territorioId ||
-    !responsavel ||
+    !territorioId
+    ||
+    !responsavel
+    ||
     !dataDesignacao
   ) {
 
@@ -1069,30 +1308,107 @@ function confirmarNovaMovimentacao(
   }
 
 
-  territorio.status =
-    "uso";
+  const supabaseId =
+    obterSupabaseIdTerritorio(
+      territorio
+    );
 
 
-  territorio.responsavel =
-    responsavel;
+  /*
+   * Nesta primeira etapa somente
+   * territórios já cadastrados no
+   * Supabase podem ser designados.
+   */
+
+  if (!supabaseId) {
+
+    alert(
+      `O Território ${territorio.numero} ainda não foi cadastrado no Supabase.`
+    );
+
+    return;
+
+  }
 
 
-  territorio.dataDesignacao =
-    dataDesignacao;
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from(
+          "Designacoes"
+        )
+        .insert(
+          [
+            {
+              territorio_id:
+                supabaseId,
+
+              responsavel:
+                responsavel,
+
+              data_retirada:
+                dataDesignacao,
+
+              data_devolucao:
+                null,
+
+              observacoes:
+                null
+            }
+          ]
+        )
+        .select();
 
 
-  salvarTerritorios();
+    if (error) {
 
-  atualizarResumo();
+      throw error;
 
-  aplicarFiltros();
-
-  fecharNovaMovimentacao();
+    }
 
 
-  alert(
-    `Território ${territorio.numero} designado para ${responsavel}.`
-  );
+    /*
+     * O trigger do Supabase altera
+     * automaticamente o território
+     * para "Em uso".
+     *
+     * Atualizamos também o objeto local
+     * para refletir imediatamente na tela.
+     */
+
+    fecharNovaMovimentacao();
+
+await carregarTerritorios();
+
+
+    alert(
+      `Território ${territorio.numero} designado para ${responsavel}.`
+    );
+
+
+    console.log(
+      "Designação gravada no Supabase:",
+      data
+    );
+
+
+  } catch (erro) {
+
+    console.error(
+      "Erro ao registrar designação:",
+      erro
+    );
+
+
+    alert(
+      "Não foi possível registrar a designação no Supabase."
+    );
+
+  }
 
 }
 
@@ -1175,15 +1491,15 @@ if (newMovementForm) {
 }
 
 
-// Fecha o modal com a tecla ESC.
-
 document.addEventListener(
   "keydown",
   evento => {
 
     if (
-      evento.key === "Escape" &&
-      newMovementModal &&
+      evento.key === "Escape"
+      &&
+      newMovementModal
+      &&
       !newMovementModal.hidden
     ) {
 

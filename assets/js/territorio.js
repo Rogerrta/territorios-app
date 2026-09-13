@@ -1,3 +1,7 @@
+// ===============================
+// PARÂMETROS DA URL
+// ===============================
+
 const params =
   new URLSearchParams(
     window.location.search
@@ -8,6 +12,10 @@ const territoryId =
     params.get("id")
   );
 
+
+// ===============================
+// ELEMENTOS DA PÁGINA
+// ===============================
 
 const territoryTitle =
   document.getElementById(
@@ -45,134 +53,131 @@ const historyContent =
   );
 
 
-let territoriosCarregados = [];
+// ===============================
+// ESTADO
+// ===============================
 
 let territorioAtual = null;
 
+let designacoesTerritorio = [];
+
+let designacaoAtiva = null;
+
 
 // ===============================
-// CARREGAMENTO
+// NORMALIZAÇÃO DE STATUS
+// ===============================
+
+function normalizarStatus(
+  status
+) {
+
+  if (!status) {
+    return "disponivel";
+  }
+
+
+  const valor =
+    String(status)
+      .trim()
+      .toLowerCase();
+
+
+  if (
+    valor === "disponivel"
+    ||
+    valor === "disponível"
+  ) {
+
+    return "disponivel";
+
+  }
+
+
+  if (
+    valor === "em uso"
+    ||
+    valor === "uso"
+  ) {
+
+    return "uso";
+
+  }
+
+
+  if (
+    valor === "atencao"
+    ||
+    valor === "atenção"
+  ) {
+
+    return "atencao";
+
+  }
+
+
+  return valor;
+
+}
+
+
+// ===============================
+// CARREGAR TERRITÓRIO
 // ===============================
 
 async function carregarTerritorio() {
 
   try {
 
-    const resposta =
+    if (
+      !territoryId
+      ||
+      Number.isNaN(
+        territoryId
+      )
+    ) {
+
+      mostrarErro(
+        "Território não informado."
+      );
+
+      return;
+
+    }
+
+
+    // ===============================
+    // 1. CARREGAR JSON
+    // ===============================
+
+    const respostaJson =
       await fetch(
         "data/territorios.json"
       );
 
 
-    if (!resposta.ok) {
+    if (!respostaJson.ok) {
 
       throw new Error(
-        "Não foi possível carregar os territórios."
+        "Não foi possível carregar o arquivo de territórios."
       );
 
     }
 
 
-    // Dados oficiais do projeto
-    const territoriosBase =
-      await resposta.json();
+    const territoriosJson =
+      await respostaJson.json();
 
 
-    // Começa utilizando os dados do JSON
-    territoriosCarregados =
-      territoriosBase;
-
-
-    const dadosLocais =
-      localStorage.getItem(
-        "territorios"
-      );
-
-
-    if (dadosLocais) {
-
-      try {
-
-        const territoriosLocais =
-          JSON.parse(
-            dadosLocais
-          );
-
-
-        /*
-         * Mescla os dados locais com os dados
-         * oficiais do JSON.
-         *
-         * Status, responsável, datas e histórico
-         * podem vir do LocalStorage.
-         *
-         * Número, localidade e mapa sempre vêm
-         * do JSON atual.
-         */
-
-        territoriosCarregados =
-          territoriosBase.map(
-            territorioBase => {
-
-              const territorioLocal =
-                territoriosLocais.find(
-                  item =>
-                    Number(item.id) ===
-                    Number(territorioBase.id)
-                );
-
-
-              if (!territorioLocal) {
-
-                return territorioBase;
-
-              }
-
-
-              return {
-
-                ...territorioBase,
-                ...territorioLocal,
-
-                id:
-                  territorioBase.id,
-
-                numero:
-                  territorioBase.numero,
-
-                localidade:
-                  territorioBase.localidade,
-
-                mapa:
-                  territorioBase.mapa
-
-              };
-
-            }
-          );
-
-
-      } catch (erro) {
-
-        console.warn(
-          "Não foi possível ler os dados locais.",
-          erro
-        );
-
-      }
-
-    }
-
-
-    territorioAtual =
-      territoriosCarregados.find(
+    const territorioBase =
+      territoriosJson.find(
         item =>
           Number(item.id) ===
-          Number(territoryId)
+          territoryId
       );
 
 
-    if (!territorioAtual) {
+    if (!territorioBase) {
 
       mostrarErro(
         "Território não encontrado."
@@ -183,6 +188,152 @@ async function carregarTerritorio() {
     }
 
 
+    // ===============================
+    // 2. CARREGAR TERRITÓRIO NO SUPABASE
+    // ===============================
+
+    const {
+      data: territoriosSupabase,
+      error: erroTerritorio
+    } =
+      await supabaseClient
+        .from(
+          "territorios"
+        )
+        .select(
+          "*"
+        )
+        .eq(
+          "numero",
+          Number(
+            territorioBase.numero
+          )
+        )
+        .limit(1);
+
+
+    if (erroTerritorio) {
+
+      throw erroTerritorio;
+
+    }
+
+
+    const registroSupabase =
+      territoriosSupabase &&
+      territoriosSupabase.length
+        ? territoriosSupabase[0]
+        : null;
+
+
+    // ===============================
+    // 3. CARREGAR DESIGNAÇÕES
+    // ===============================
+
+    if (registroSupabase) {
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from(
+            "Designacoes"
+          )
+          .select(
+            "*"
+          )
+          .eq(
+            "territorio_id",
+            registroSupabase.id
+          )
+          .order(
+            "data_retirada",
+            {
+              ascending: false
+            }
+          )
+          .order(
+            "id",
+            {
+              ascending: false
+            }
+          );
+
+
+      if (error) {
+
+        throw error;
+
+      }
+
+
+      designacoesTerritorio =
+        data || [];
+
+
+      designacaoAtiva =
+        designacoesTerritorio.find(
+          item =>
+            item.data_devolucao ===
+            null
+        )
+        ||
+        null;
+
+    } else {
+
+      designacoesTerritorio = [];
+
+      designacaoAtiva = null;
+
+    }
+
+
+    // ===============================
+    // 4. MONTAR OBJETO FINAL
+    // ===============================
+
+    territorioAtual = {
+
+      ...territorioBase,
+
+      supabaseId:
+        registroSupabase
+          ? registroSupabase.id
+          : null,
+
+      status:
+        registroSupabase
+          ? normalizarStatus(
+              registroSupabase.status
+            )
+          : normalizarStatus(
+              territorioBase.status
+            ),
+
+      responsavel:
+        designacaoAtiva
+          ? designacaoAtiva.responsavel
+          : null,
+
+      dataDesignacao:
+        designacaoAtiva
+          ? designacaoAtiva.data_retirada
+          : null,
+
+      designacaoId:
+        designacaoAtiva
+          ? designacaoAtiva.id
+          : null
+
+    };
+
+
+    // ===============================
+    // 5. RENDERIZAR
+    // ===============================
+
     renderizarTerritorio(
       territorioAtual
     );
@@ -191,6 +342,7 @@ async function carregarTerritorio() {
   } catch (erro) {
 
     console.error(
+      "Erro ao carregar território:",
       erro
     );
 
@@ -212,14 +364,20 @@ function renderizarTerritorio(
   territorio
 ) {
 
-  document.title =
-    `Território ${territorio.numero} | Controle de Territórios`;
+  if (!territorio) {
+    return;
+  }
 
 
   if (territoryTitle) {
 
     territoryTitle.textContent =
-      `Território ${territorio.numero}`;
+      `Território ${String(
+        territorio.numero
+      ).padStart(
+        2,
+        "0"
+      )}`;
 
   }
 
@@ -227,7 +385,9 @@ function renderizarTerritorio(
   if (territoryLocation) {
 
     territoryLocation.textContent =
-      territorio.localidade || "";
+      territorio.localidade
+      ||
+      "";
 
   }
 
@@ -247,13 +407,9 @@ function renderizarTerritorio(
   );
 
 
-  renderizarHistorico(
-    territorio
-  );
+  renderizarHistorico();
 
 }
-
-
 // ===============================
 // STATUS
 // ===============================
@@ -377,6 +533,8 @@ function renderizarMapa(
   `;
 
 }
+
+
 // ===============================
 // SITUAÇÃO ATUAL
 // ===============================
@@ -386,7 +544,8 @@ function renderizarSituacao(
 ) {
 
   if (
-    !currentStatus ||
+    !currentStatus
+    ||
     !territoryActions
   ) {
 
@@ -538,9 +697,7 @@ function renderizarSituacao(
 // HISTÓRICO
 // ===============================
 
-function renderizarHistorico(
-  territorio
-) {
+function renderizarHistorico() {
 
   if (!historyContent) {
     return;
@@ -548,9 +705,9 @@ function renderizarHistorico(
 
 
   if (
-    !territorio.historico
+    !designacoesTerritorio
     ||
-    territorio.historico.length === 0
+    designacoesTerritorio.length === 0
   ) {
 
     historyContent.innerHTML = `
@@ -569,7 +726,7 @@ function renderizarHistorico(
   historyContent.innerHTML = "";
 
 
-  territorio.historico
+  designacoesTerritorio
     .slice()
     .reverse()
     .forEach(
@@ -609,7 +766,7 @@ function renderizarHistorico(
               <strong>
                 ${
                   formatarData(
-                    movimentacao.dataDesignacao
+                    movimentacao.data_retirada
                   )
                 }
               </strong>
@@ -622,9 +779,11 @@ function renderizarHistorico(
               Conclusão:
               <strong>
                 ${
-                  formatarData(
-                    movimentacao.dataConclusao
-                  )
+                  movimentacao.data_devolucao
+                    ? formatarData(
+                        movimentacao.data_devolucao
+                      )
+                    : "Em andamento"
                 }
               </strong>
 
@@ -695,11 +854,18 @@ function calcularDias(
 
 
   const partes =
-    dataDesignacao.split("-");
+    dataDesignacao
+      .split("-")
+      .map(Number);
 
 
   if (
     partes.length !== 3
+    ||
+    partes.some(
+      parte =>
+        Number.isNaN(parte)
+    )
   ) {
 
     return "-";
@@ -711,12 +877,11 @@ function calcularDias(
     ano,
     mes,
     dia
-  ] =
-    partes.map(Number);
+  ] = partes;
 
 
   const inicio =
-    new Date(
+    Date.UTC(
       ano,
       mes - 1,
       dia
@@ -727,16 +892,8 @@ function calcularDias(
     new Date();
 
 
-  const inicioDia =
-    new Date(
-      inicio.getFullYear(),
-      inicio.getMonth(),
-      inicio.getDate()
-    );
-
-
-  const hojeDia =
-    new Date(
+  const hojeUTC =
+    Date.UTC(
       hoje.getFullYear(),
       hoje.getMonth(),
       hoje.getDate()
@@ -744,15 +901,16 @@ function calcularDias(
 
 
   const diferenca =
-    hojeDia.getTime()
-    -
-    inicioDia.getTime();
+    hojeUTC - inicio;
 
 
   const dias =
-    Math.floor(
-      diferenca /
-      86400000
+    Math.max(
+      0,
+      Math.floor(
+        diferenca /
+        86400000
+      )
     );
 
 
@@ -801,24 +959,6 @@ function obterDataHoje() {
   );
 
 }
-
-
-// ===============================
-// LOCAL STORAGE
-// ===============================
-
-function salvarDadosLocais() {
-
-  localStorage.setItem(
-    "territorios",
-    JSON.stringify(
-      territoriosCarregados
-    )
-  );
-
-}
-
-
 // ===============================
 // DESIGNAÇÃO
 // ===============================
@@ -855,7 +995,9 @@ function designarTerritorio() {
     ||
     !campoData
   ) {
+
     return;
+
   }
 
 
@@ -886,6 +1028,8 @@ function designarTerritorio() {
   campoResponsavel.focus();
 
 }
+
+
 // ===============================
 // WHATSAPP
 // ===============================
@@ -937,12 +1081,21 @@ function enviarWhatsApp() {
 
   if (territorioAtual.mapa) {
 
+    const caminhoMapa =
+      String(
+        territorioAtual.mapa
+      ).replace(
+        /^\/+/,
+        ""
+      );
+
+
     const urlMapa =
-  `https://rogerrta.github.io/territorios-app/${territorioAtual.mapa}`;
+      `https://rogerrta.github.io/territorios-app/${caminhoMapa}`;
 
 
     mapa =
-      `\n\nMapa do território:\n${urlMapa}`;
+      `\n\nVer mapa do território:\n${urlMapa}`;
 
   }
 
@@ -972,11 +1125,13 @@ Bom trabalho!`;
   );
 
 }
+
+
 // ===============================
 // CONCLUSÃO
 // ===============================
 
-function concluirTerritorio() {
+async function concluirTerritorio() {
 
   if (!territorioAtual) {
     return;
@@ -984,11 +1139,9 @@ function concluirTerritorio() {
 
 
   if (
-    territorioAtual.status !==
-      "uso"
+    territorioAtual.status !== "uso"
     &&
-    territorioAtual.status !==
-      "atencao"
+    territorioAtual.status !== "atencao"
   ) {
 
     alert(
@@ -996,7 +1149,16 @@ function concluirTerritorio() {
     );
 
     return;
+  }
 
+
+  if (!designacaoAtiva) {
+
+    alert(
+      "Não foi encontrada uma designação ativa para este território."
+    );
+
+    return;
   }
 
 
@@ -1011,67 +1173,80 @@ function concluirTerritorio() {
   }
 
 
-  const movimentacao = {
+  try {
 
-    responsavel:
-      territorioAtual.responsavel
+    const dataConclusao =
+      obterDataHoje();
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("Designacoes")
+        .update({
+          data_devolucao:
+            dataConclusao
+        })
+        .eq(
+          "id",
+          designacaoAtiva.id
+        )
+        .is(
+          "data_devolucao",
+          null
+        )
+        .select(
+          "id, territorio_id, data_devolucao"
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    console.log(
+      "Resultado da conclusão:",
+      data
+    );
+
+
+    if (
+      !data
       ||
-      "-",
+      data.length === 0
+    ) {
 
-    dataDesignacao:
-      territorioAtual.dataDesignacao
-      ||
-      null,
-
-    dataConclusao:
-      obterDataHoje()
-
-  };
+      throw new Error(
+        "Nenhuma designação foi atualizada. Verifique a policy UPDATE da tabela Designacoes."
+      );
+    }
 
 
-  if (
-    !Array.isArray(
-      territorioAtual.historico
-    )
-  ) {
+    alert(
+      `Território ${territorioAtual.numero} concluído com sucesso.`
+    );
 
-    territorioAtual.historico =
-      [];
 
+    await carregarTerritorio();
+
+
+  } catch (erro) {
+
+    console.error(
+      "Erro ao concluir território:",
+      erro
+    );
+
+
+    alert(
+      "Não foi possível concluir o território no Supabase."
+    );
   }
-
-
-  territorioAtual.historico.push(
-    movimentacao
-  );
-
-
-  territorioAtual.ultimaConclusao =
-    movimentacao.dataConclusao;
-
-
-  territorioAtual.status =
-    "disponivel";
-
-
-  territorioAtual.responsavel =
-    null;
-
-
-  territorioAtual.dataDesignacao =
-    null;
-
-
-  salvarDadosLocais();
-
-
-  renderizarTerritorio(
-    territorioAtual
-  );
-
 }
-
-
 // ===============================
 // MODAL DO MAPA
 // ===============================
@@ -1220,72 +1395,7 @@ function mostrarErro(
 
   }
 
-}// ===============================
-// EVENTOS DO MODAL
-// ===============================
-
-const mapModalClose =
-  document.getElementById(
-    "mapModalClose"
-  );
-
-
-if (mapModalClose) {
-
-  mapModalClose.addEventListener(
-    "click",
-    fecharMapa
-  );
-
 }
-
-
-const mapModal =
-  document.getElementById(
-    "mapModal"
-  );
-
-
-if (mapModal) {
-
-  mapModal.addEventListener(
-    "click",
-    evento => {
-
-      if (
-        evento.target ===
-        mapModal
-      ) {
-
-        fecharMapa();
-
-      }
-
-    }
-  );
-
-}
-
-
-document.addEventListener(
-  "keydown",
-  evento => {
-
-    if (
-      evento.key ===
-      "Escape"
-    ) {
-
-      fecharMapa();
-
-      fecharModalDesignacao();
-
-    }
-
-  }
-);
-
-
 // ===============================
 // MODAL DE DESIGNAÇÃO
 // ===============================
@@ -1321,6 +1431,10 @@ function fecharModalDesignacao() {
 }
 
 
+// ===============================
+// ELEMENTOS DO MODAL
+// ===============================
+
 const designationForm =
   document.getElementById(
     "designationForm"
@@ -1338,6 +1452,57 @@ const designationCancel =
     "designationCancel"
   );
 
+
+const mapModalClose =
+  document.getElementById(
+    "mapModalClose"
+  );
+
+
+const mapModal =
+  document.getElementById(
+    "mapModal"
+  );
+
+
+// ===============================
+// EVENTOS DO MAPA
+// ===============================
+
+if (mapModalClose) {
+
+  mapModalClose.addEventListener(
+    "click",
+    fecharMapa
+  );
+
+}
+
+
+if (mapModal) {
+
+  mapModal.addEventListener(
+    "click",
+    evento => {
+
+      if (
+        evento.target ===
+        mapModal
+      ) {
+
+        fecharMapa();
+
+      }
+
+    }
+  );
+
+}
+
+
+// ===============================
+// EVENTOS DO MODAL DE DESIGNAÇÃO
+// ===============================
 
 if (designationModalClose) {
 
@@ -1359,11 +1524,15 @@ if (designationCancel) {
 }
 
 
+// ===============================
+// CONFIRMAR DESIGNAÇÃO
+// ===============================
+
 if (designationForm) {
 
   designationForm.addEventListener(
     "submit",
-    evento => {
+    async evento => {
 
       evento.preventDefault();
 
@@ -1373,21 +1542,47 @@ if (designationForm) {
       }
 
 
+      if (!territorioAtual.supabaseId) {
+
+        alert(
+          "Este território ainda não está cadastrado no Supabase."
+        );
+
+        return;
+
+      }
+
+
+      const campoResponsavel =
+        document.getElementById(
+          "designationResponsible"
+        );
+
+
+      const campoData =
+        document.getElementById(
+          "designationDate"
+        );
+
+
+      if (
+        !campoResponsavel
+        ||
+        !campoData
+      ) {
+
+        return;
+
+      }
+
+
       const responsavel =
-        document
-          .getElementById(
-            "designationResponsible"
-          )
-          .value
+        campoResponsavel.value
           .trim();
 
 
       const dataDesignacao =
-        document
-          .getElementById(
-            "designationDate"
-          )
-          .value;
+        campoData.value;
 
 
       if (
@@ -1405,32 +1600,119 @@ if (designationForm) {
       }
 
 
-      territorioAtual.status =
-        "uso";
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient
+            .from(
+              "Designacoes"
+            )
+            .insert(
+              [
+                {
+                  territorio_id:
+                    territorioAtual.supabaseId,
+
+                  responsavel:
+                    responsavel,
+
+                  data_retirada:
+                    dataDesignacao,
+
+                  data_devolucao:
+                    null,
+
+                  observacoes:
+                    null
+                }
+              ]
+            )
+            .select();
 
 
-      territorioAtual.responsavel =
-        responsavel;
+        if (error) {
+
+          throw error;
+
+        }
 
 
-      territorioAtual.dataDesignacao =
-        dataDesignacao;
+        fecharModalDesignacao();
 
 
-      salvarDadosLocais();
+        alert(
+          `Território ${territorioAtual.numero} designado para ${responsavel}.`
+        );
 
 
-      fecharModalDesignacao();
+        console.log(
+          "Designação criada:",
+          data
+        );
 
 
-      renderizarTerritorio(
-        territorioAtual
-      );
+        await carregarTerritorio();
+
+
+      } catch (erro) {
+
+        console.error(
+          "Erro ao designar território:",
+          erro
+        );
+
+
+        if (
+          erro &&
+          erro.code ===
+            "23505"
+        ) {
+
+          alert(
+            "Este território já possui uma designação ativa."
+          );
+
+          return;
+
+        }
+
+
+        alert(
+          "Não foi possível registrar a designação no Supabase."
+        );
+
+      }
 
     }
   );
 
 }
+
+
+// ===============================
+// TECLA ESC
+// ===============================
+
+document.addEventListener(
+  "keydown",
+  evento => {
+
+    if (
+      evento.key ===
+      "Escape"
+    ) {
+
+      fecharMapa();
+
+      fecharModalDesignacao();
+
+    }
+
+  }
+);
 
 
 // ===============================
