@@ -203,6 +203,7 @@ async function carregarTerritorio() {
 
 }
 
+
 // ===============================
 // RENDERIZAÇÃO PRINCIPAL
 // ===============================
@@ -376,8 +377,6 @@ function renderizarMapa(
   `;
 
 }
-
-
 // ===============================
 // SITUAÇÃO ATUAL
 // ===============================
@@ -499,6 +498,14 @@ function renderizarSituacao(
 
 
     territoryActions.innerHTML = `
+
+      <button
+        type="button"
+        class="btn-secondary"
+        onclick="enviarWhatsApp()"
+      >
+        Enviar pelo WhatsApp
+      </button>
 
       <button
         type="button"
@@ -816,7 +823,7 @@ function salvarDadosLocais() {
 // DESIGNAÇÃO
 // ===============================
 
- function designarTerritorio() {
+function designarTerritorio() {
 
   if (!territorioAtual) {
     return;
@@ -879,10 +886,92 @@ function salvarDadosLocais() {
   campoResponsavel.focus();
 
 }
+// ===============================
+// WHATSAPP
+// ===============================
+
+function enviarWhatsApp() {
+
+  if (!territorioAtual) {
+    return;
+  }
 
 
+  if (
+    territorioAtual.status !== "uso"
+    &&
+    territorioAtual.status !== "atencao"
+  ) {
+
+    alert(
+      "Este território ainda não está designado."
+    );
+
+    return;
+
+  }
 
 
+  const numero =
+    territorioAtual.numero || "-";
+
+
+  const responsavel =
+    territorioAtual.responsavel || "-";
+
+
+  const data =
+    formatarData(
+      territorioAtual.dataDesignacao
+    );
+
+
+  const localidade =
+    territorioAtual.localidade
+      ? `\nLocalidade: ${territorioAtual.localidade}`
+      : "";
+
+
+  let mapa = "";
+
+
+  if (territorioAtual.mapa) {
+
+    const urlMapa =
+  `https://rogerrta.github.io/territorios-app/${territorioAtual.mapa}`;
+
+
+    mapa =
+      `\n\nMapa do território:\n${urlMapa}`;
+
+  }
+
+
+  const mensagem =
+    `Olá!
+
+Foi designado para você o Território ${numero}.
+
+Responsável: ${responsavel}
+Data da designação: ${data}${localidade}${mapa}
+
+Bom trabalho!`;
+
+
+  const url =
+    `https://wa.me/?text=${
+      encodeURIComponent(
+        mensagem
+      )
+    }`;
+
+
+  window.open(
+    url,
+    "_blank"
+  );
+
+}
 // ===============================
 // CONCLUSÃO
 // ===============================
@@ -1131,10 +1220,7 @@ function mostrarErro(
 
   }
 
-}
-
-
-// ===============================
+}// ===============================
 // EVENTOS DO MODAL
 // ===============================
 
@@ -1192,10 +1278,17 @@ document.addEventListener(
 
       fecharMapa();
 
+      fecharModalDesignacao();
+
     }
 
   }
 );
+
+
+// ===============================
+// MODAL DE DESIGNAÇÃO
+// ===============================
 
 function fecharModalDesignacao() {
 
@@ -1338,6 +1431,8 @@ if (designationForm) {
   );
 
 }
+
+
 // ===============================
 // INICIALIZAÇÃO
 // ===============================
