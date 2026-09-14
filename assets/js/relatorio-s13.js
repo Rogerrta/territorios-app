@@ -32,17 +32,12 @@ const printButton =
 // CARREGAMENTO
 // ========================================
 
-// ========================================
-// CARREGAMENTO
-// ========================================
-
 async function carregarRelatorio() {
 
   try {
 
     // ------------------------------------
-    // 1. CARREGA OS TERRITÓRIOS
-    // DIRETAMENTE DO SUPABASE
+    // 1. CARREGA TERRITÓRIOS DO SUPABASE
     // ------------------------------------
 
     const {
@@ -122,7 +117,7 @@ async function carregarRelatorio() {
 
 
     // ------------------------------------
-    // 3. PREPARA OS TERRITÓRIOS
+    // 3. PREPARA TERRITÓRIOS
     // ------------------------------------
 
     territoriosS13 =
@@ -176,7 +171,7 @@ async function carregarRelatorio() {
 
 
     // ------------------------------------
-    // 4. PREPARA AS DESIGNAÇÕES
+    // 4. PREPARA DESIGNAÇÕES
     // ------------------------------------
 
     designacoesS13 =
@@ -186,11 +181,10 @@ async function carregarRelatorio() {
 
 
     // ------------------------------------
-    // 5. MONTA O RELATÓRIO
+    // 5. MONTA RELATÓRIO
     // ------------------------------------
 
     preencherAnosServico();
-
 
     renderizarRelatorio();
 
@@ -208,6 +202,8 @@ async function carregarRelatorio() {
   }
 
 }
+
+
 // ========================================
 // ANO DE SERVIÇO
 // ========================================
@@ -226,6 +222,8 @@ function obterAnoServicoAtual() {
     hoje.getMonth() + 1;
 
 
+  // Setembro até agosto.
+
   if (mes >= 9) {
 
     return (
@@ -241,6 +239,10 @@ function obterAnoServicoAtual() {
 
 }
 
+
+// ========================================
+// PREENCHER ANOS DE SERVIÇO
+// ========================================
 
 function preencherAnosServico() {
 
@@ -270,6 +272,9 @@ function preencherAnosServico() {
   serviceYear.innerHTML =
     "";
 
+
+  // Ano anterior, atual
+  // e dois anos seguintes.
 
   for (
     let inicio =
@@ -303,7 +308,9 @@ function preencherAnosServico() {
 
 
   const anoSelecionado =
-    anoSalvo || atual;
+    anoSalvo
+    ||
+    atual;
 
 
   const existeOpcao =
@@ -343,7 +350,9 @@ function obterPeriodoAnoServico(
     ||
     partes.some(
       numero =>
-        Number.isNaN(numero)
+        Number.isNaN(
+          numero
+        )
     )
   ) {
 
@@ -633,6 +642,8 @@ function obterUltimaConclusao(
   ];
 
 }
+
+
 // ========================================
 // CÉLULA DE MOVIMENTAÇÃO
 // ========================================
@@ -781,6 +792,53 @@ function escaparHTML(
 
 
 // ========================================
+// DIVIDIR MOVIMENTAÇÕES EM BLOCOS
+// ========================================
+
+function dividirEmBlocos(
+  lista,
+  tamanho
+) {
+
+  const blocos = [];
+
+
+  for (
+    let i = 0;
+    i < lista.length;
+    i += tamanho
+  ) {
+
+    blocos.push(
+      lista.slice(
+        i,
+        i + tamanho
+      )
+    );
+
+  }
+
+
+  // Mesmo sem movimentações,
+  // precisamos gerar uma linha vazia.
+
+  if (
+    blocos.length === 0
+  ) {
+
+    blocos.push(
+      []
+    );
+
+  }
+
+
+  return blocos;
+
+}
+
+
+// ========================================
 // RENDERIZAÇÃO
 // ========================================
 
@@ -857,97 +915,124 @@ function renderizarRelatorio() {
         );
 
 
-      // O formulário possui quatro espaços
-      // de designação por território.
+      // Cada linha comporta quatro
+      // movimentações.
 
-      const blocos =
-        movimentacoes.slice(
-          0,
+      const grupos =
+        dividirEmBlocos(
+          movimentacoes,
           4
         );
 
 
-      while (
-        blocos.length < 4
-      ) {
+      grupos.forEach(
+        (
+          grupo,
+          indiceGrupo
+        ) => {
 
-        blocos.push(
-          null
-        );
-
-      }
-
-
-      const linha =
-        document.createElement(
-          "tr"
-        );
+          const blocos =
+            grupo.slice();
 
 
-      linha.innerHTML = `
+          while (
+            blocos.length < 4
+          ) {
 
-        <td class="s13-numero">
+            blocos.push(
+              null
+            );
 
-          ${
-            escaparHTML(
-              territorio.numero
-            )
           }
 
-        </td>
+
+          const linha =
+            document.createElement(
+              "tr"
+            );
 
 
-        <td class="s13-ultima">
+          // Número e última conclusão
+          // aparecem somente na primeira
+          // linha do território.
 
-          ${
-            ultimaConclusao
-              ? formatarDataS13(
-                  ultimaConclusao
-                )
-              : ""
-          }
-
-        </td>
+          const mostrarNumero =
+            indiceGrupo === 0;
 
 
-        ${
-          criarCelulaMovimentacao(
-            blocos[0]
-          )
+          linha.innerHTML = `
+
+            <td class="s13-numero">
+
+              ${
+                mostrarNumero
+                  ? escaparHTML(
+                      territorio.numero
+                    )
+                  : ""
+              }
+
+            </td>
+
+
+            <td class="s13-ultima">
+
+              ${
+                mostrarNumero
+                &&
+                ultimaConclusao
+                  ? formatarDataS13(
+                      ultimaConclusao
+                    )
+                  : ""
+              }
+
+            </td>
+
+
+            ${
+              criarCelulaMovimentacao(
+                blocos[0]
+              )
+            }
+
+
+            ${
+              criarCelulaMovimentacao(
+                blocos[1]
+              )
+            }
+
+
+            ${
+              criarCelulaMovimentacao(
+                blocos[2]
+              )
+            }
+
+
+            ${
+              criarCelulaMovimentacao(
+                blocos[3]
+              )
+            }
+
+          `;
+
+
+          s13Body.appendChild(
+            linha
+          );
+
         }
-
-
-        ${
-          criarCelulaMovimentacao(
-            blocos[1]
-          )
-        }
-
-
-        ${
-          criarCelulaMovimentacao(
-            blocos[2]
-          )
-        }
-
-
-        ${
-          criarCelulaMovimentacao(
-            blocos[3]
-          )
-        }
-
-      `;
-
-
-      s13Body.appendChild(
-        linha
       );
 
     }
   );
 
 }
+
+
 // ========================================
 // ERRO
 // ========================================
