@@ -5,6 +5,8 @@
 
 let territoriosS13 = [];
 
+let designacoesS13 = [];
+
 
 // ========================================
 // ELEMENTOS
@@ -30,70 +32,165 @@ const printButton =
 // CARREGAMENTO
 // ========================================
 
+// ========================================
+// CARREGAMENTO
+// ========================================
+
 async function carregarRelatorio() {
 
   try {
 
-    const resposta =
-      await fetch(
-        "data/territorios.json"
-      );
+    // ------------------------------------
+    // 1. CARREGA OS TERRITÓRIOS
+    // DIRETAMENTE DO SUPABASE
+    // ------------------------------------
 
-
-    if (!resposta.ok) {
-
-      throw new Error(
-        "Não foi possível carregar os territórios."
-      );
-
-    }
-
-
-    territoriosS13 =
-      await resposta.json();
-
-
-    // Usa os dados atuais do aplicativo
-    // caso existam no localStorage.
-
-    const dadosLocais =
-      localStorage.getItem(
-        "territorios"
-      );
-
-
-    if (dadosLocais) {
-
-      try {
-
-        const dados =
-          JSON.parse(
-            dadosLocais
-          );
-
-
-        if (
-          Array.isArray(dados)
-        ) {
-
-          territoriosS13 =
-            dados;
-
-        }
-
-      } catch (erro) {
-
-        console.warn(
-          "Não foi possível ler os dados locais.",
-          erro
+    const {
+      data: territoriosBanco,
+      error: erroTerritorios
+    } =
+      await supabaseClient
+        .from(
+          "territorios"
+        )
+        .select(
+          `
+            id,
+            numero,
+            nome,
+            descricao,
+            status,
+            ultima_conclusao
+          `
+        )
+        .order(
+          "numero",
+          {
+            ascending: true
+          }
         );
 
-      }
+
+    if (erroTerritorios) {
+
+      throw erroTerritorios;
 
     }
 
 
+    // ------------------------------------
+    // 2. CARREGA TODAS AS DESIGNAÇÕES
+    // ------------------------------------
+
+    const {
+      data: designacoesBanco,
+      error: erroDesignacoes
+    } =
+      await supabaseClient
+        .from(
+          "Designacoes"
+        )
+        .select(
+          `
+            id,
+            territorio_id,
+            responsavel,
+            data_retirada,
+            data_devolucao,
+            observacoes
+          `
+        )
+        .order(
+          "data_retirada",
+          {
+            ascending: true
+          }
+        )
+        .order(
+          "id",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (erroDesignacoes) {
+
+      throw erroDesignacoes;
+
+    }
+
+
+    // ------------------------------------
+    // 3. PREPARA OS TERRITÓRIOS
+    // ------------------------------------
+
+    territoriosS13 =
+      (
+        territoriosBanco
+        ||
+        []
+      ).map(
+        territorio => {
+
+          return {
+
+            id:
+              territorio.id,
+
+            supabaseId:
+              territorio.id,
+
+            numero:
+              String(
+                territorio.numero
+              ).padStart(
+                2,
+                "0"
+              ),
+
+            nome:
+              territorio.nome
+              ||
+              "",
+
+            localidade:
+              territorio.descricao
+              ||
+              "",
+
+            status:
+              territorio.status
+              ||
+              "disponivel",
+
+            ultimaConclusaoBanco:
+              territorio.ultima_conclusao
+              ||
+              null
+
+          };
+
+        }
+      );
+
+
+    // ------------------------------------
+    // 4. PREPARA AS DESIGNAÇÕES
+    // ------------------------------------
+
+    designacoesS13 =
+      designacoesBanco
+      ||
+      [];
+
+
+    // ------------------------------------
+    // 5. MONTA O RELATÓRIO
+    // ------------------------------------
+
     preencherAnosServico();
+
 
     renderizarRelatorio();
 
@@ -111,8 +208,6 @@ async function carregarRelatorio() {
   }
 
 }
-
-
 // ========================================
 // ANO DE SERVIÇO
 // ========================================
@@ -131,9 +226,6 @@ function obterAnoServicoAtual() {
     hoje.getMonth() + 1;
 
 
-  // Ano de serviço:
-  // setembro até agosto.
-
   if (mes >= 9) {
 
     return (
@@ -149,19 +241,23 @@ function obterAnoServicoAtual() {
 
 }
 
+
 function preencherAnosServico() {
 
   if (!serviceYear) {
     return;
   }
 
+
   const atual =
     obterAnoServicoAtual();
+
 
   const anoSalvo =
     localStorage.getItem(
       "anoServicoSelecionado"
     );
+
 
   const [
     inicioAtual
@@ -170,8 +266,10 @@ function preencherAnosServico() {
       .split("/")
       .map(Number);
 
+
   serviceYear.innerHTML =
     "";
+
 
   for (
     let inicio =
@@ -188,11 +286,14 @@ function preencherAnosServico() {
         "option"
       );
 
+
     option.value =
       `${inicio}/${inicio + 1}`;
 
+
     option.textContent =
       `${inicio}/${inicio + 1}`;
+
 
     serviceYear.appendChild(
       option
@@ -200,8 +301,10 @@ function preencherAnosServico() {
 
   }
 
+
   const anoSelecionado =
     anoSalvo || atual;
+
 
   const existeOpcao =
     Array.from(
@@ -211,6 +314,7 @@ function preencherAnosServico() {
         option.value ===
         anoSelecionado
     );
+
 
   serviceYear.value =
     existeOpcao
@@ -347,41 +451,42 @@ function obterMovimentacoes(
   anoServico
 ) {
 
-  const movimentacoes =
-    [];
-
-
-  // ------------------------------------
-  // Histórico concluído
-  // ------------------------------------
-
   if (
-    Array.isArray(
-      territorio.historico
-    )
+    !territorio
+    ||
+    !territorio.supabaseId
   ) {
 
-    territorio.historico.forEach(
-      item => {
+    return [];
 
-        if (
-          !item ||
-          !item.dataDesignacao
-        ) {
-
-          return;
-
-        }
+  }
 
 
-        if (
+  const movimentacoes =
+    designacoesS13
+      .filter(
+        item =>
+          Number(
+            item.territorio_id
+          ) ===
+          Number(
+            territorio.supabaseId
+          )
+      )
+      .filter(
+        item =>
           dataPertenceAoAno(
-            item.dataDesignacao,
+            item.data_retirada,
             anoServico
           )
-        ) {
+      )
+      .map(
+        item => {
 
-          movimentacoes.push({
+          return {
+
+            id:
+              item.id,
 
             responsavel:
               item.responsavel
@@ -389,95 +494,46 @@ function obterMovimentacoes(
               "",
 
             dataDesignacao:
-              item.dataDesignacao,
+              item.data_retirada,
 
             dataConclusao:
-              item.dataConclusao
+              item.data_devolucao
               ||
               null,
 
             ativa:
-              false
+              item.data_devolucao ===
+              null
 
-          });
+          };
 
         }
-
-      }
-    );
-
-  }
-
-
-  // ------------------------------------
-  // Designação atualmente em uso
-  // ------------------------------------
-
-  if (
-    (
-      territorio.status ===
-        "uso"
-      ||
-      territorio.status ===
-        "atencao"
-    )
-    &&
-    territorio.dataDesignacao
-    &&
-    dataPertenceAoAno(
-      territorio.dataDesignacao,
-      anoServico
-    )
-  ) {
-
-    const jaExiste =
-      movimentacoes.some(
-        item =>
-          item.dataDesignacao ===
-            territorio.dataDesignacao
-          &&
-          item.responsavel ===
-            territorio.responsavel
-          &&
-          !item.dataConclusao
       );
 
-
-    if (!jaExiste) {
-
-      movimentacoes.push({
-
-        responsavel:
-          territorio.responsavel
-          ||
-          "",
-
-        dataDesignacao:
-          territorio.dataDesignacao,
-
-        dataConclusao:
-          null,
-
-        ativa:
-          true
-
-      });
-
-    }
-
-  }
-
-
-  // Mais antigas primeiro.
 
   movimentacoes.sort(
     (a, b) => {
 
-      return (
+      const comparacaoData =
         a.dataDesignacao
           .localeCompare(
             b.dataDesignacao
-          )
+          );
+
+
+      if (
+        comparacaoData !== 0
+      ) {
+
+        return comparacaoData;
+
+      }
+
+
+      return (
+        Number(a.id)
+        -
+        Number(b.id)
       );
 
     }
@@ -498,6 +554,17 @@ function obterUltimaConclusao(
   anoServico
 ) {
 
+  if (
+    !territorio
+    ||
+    !territorio.supabaseId
+  ) {
+
+    return null;
+
+  }
+
+
   const periodo =
     obterPeriodoAnoServico(
       anoServico
@@ -509,49 +576,41 @@ function obterUltimaConclusao(
   }
 
 
-  const conclusoes = [];
+  const conclusoes =
+    designacoesS13
+      .filter(
+        item =>
+          Number(
+            item.territorio_id
+          ) ===
+          Number(
+            territorio.supabaseId
+          )
+      )
+      .filter(
+        item =>
+          item.data_devolucao
+      )
+      .filter(
+        item =>
+          item.data_devolucao <=
+          periodo.fim
+      )
+      .map(
+        item =>
+          item.data_devolucao
+      );
 
-
-  // Procura todas as conclusões
-  // registradas no histórico.
 
   if (
-    Array.isArray(
-      territorio.historico
-    )
-  ) {
-
-    territorio.historico.forEach(
-      item => {
-
-        if (
-          item &&
-          item.dataConclusao &&
-          item.dataConclusao <= periodo.fim
-        ) {
-
-          conclusoes.push(
-            item.dataConclusao
-          );
-
-        }
-
-      }
-    );
-
-  }
-
-
-  // Compatibilidade com território
-  // que possua ultimaConclusao salva.
-
-  if (
-    territorio.ultimaConclusao &&
-    territorio.ultimaConclusao <= periodo.fim
+    territorio.ultimaConclusaoBanco
+    &&
+    territorio.ultimaConclusaoBanco <=
+    periodo.fim
   ) {
 
     conclusoes.push(
-      territorio.ultimaConclusao
+      territorio.ultimaConclusaoBanco
     );
 
   }
@@ -566,10 +625,6 @@ function obterUltimaConclusao(
   }
 
 
-  // Como usamos YYYY-MM-DD,
-  // a ordenação textual funciona
-  // cronologicamente.
-
   conclusoes.sort();
 
 
@@ -578,14 +633,12 @@ function obterUltimaConclusao(
   ];
 
 }
-
 // ========================================
 // CÉLULA DE MOVIMENTAÇÃO
 // ========================================
 
 function criarCelulaMovimentacao(
-  movimentacao,
-  indice
+  movimentacao
 ) {
 
   const classes =
@@ -648,9 +701,11 @@ function criarCelulaMovimentacao(
 
 
   const dataConclusao =
-    formatarDataS13(
-      movimentacao.dataConclusao
-    );
+    movimentacao.dataConclusao
+      ? formatarDataS13(
+          movimentacao.dataConclusao
+        )
+      : "";
 
 
   return `
@@ -732,7 +787,8 @@ function escaparHTML(
 function renderizarRelatorio() {
 
   if (
-    !s13Body ||
+    !s13Body
+    ||
     !serviceYear
   ) {
 
@@ -794,17 +850,15 @@ function renderizarRelatorio() {
         );
 
 
-     const ultimaConclusao =
-  obterUltimaConclusao(
-    territorio,
-    anoServico
-  );
+      const ultimaConclusao =
+        obterUltimaConclusao(
+          territorio,
+          anoServico
+        );
 
 
-      // O formulário possui quatro
-      // espaços de designação por linha.
-      // Mantemos os quatro primeiros
-      // registros do ano selecionado.
+      // O formulário possui quatro espaços
+      // de designação por território.
 
       const blocos =
         movimentacoes.slice(
@@ -833,24 +887,24 @@ function renderizarRelatorio() {
       linha.innerHTML = `
 
         <td class="s13-numero">
+
           ${
             escaparHTML(
               territorio.numero
             )
           }
+
         </td>
 
 
         <td class="s13-ultima">
 
           ${
-          ultimaConclusao
-  ?
-  formatarDataS13(
-    ultimaConclusao
-  )
-  :
-  ""
+            ultimaConclusao
+              ? formatarDataS13(
+                  ultimaConclusao
+                )
+              : ""
           }
 
         </td>
@@ -858,32 +912,28 @@ function renderizarRelatorio() {
 
         ${
           criarCelulaMovimentacao(
-            blocos[0],
-            0
+            blocos[0]
           )
         }
 
 
         ${
           criarCelulaMovimentacao(
-            blocos[1],
-            1
+            blocos[1]
           )
         }
 
 
         ${
           criarCelulaMovimentacao(
-            blocos[2],
-            2
+            blocos[2]
           )
         }
 
 
         ${
           criarCelulaMovimentacao(
-            blocos[3],
-            3
+            blocos[3]
           )
         }
 
@@ -898,8 +948,6 @@ function renderizarRelatorio() {
   );
 
 }
-
-
 // ========================================
 // ERRO
 // ========================================
@@ -943,6 +991,7 @@ if (serviceYear) {
         "anoServicoSelecionado",
         serviceYear.value
       );
+
 
       renderizarRelatorio();
 
