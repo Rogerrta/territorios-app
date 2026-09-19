@@ -278,10 +278,98 @@
 
   </div>
 
+    <!-- MODAL DE CONCLUSÃO -->
+
+  <div
+    class="modal"
+    id="conclusionModal"
+    aria-hidden="true"
+  >
+
+    <div class="modal-backdrop"></div>
+
+    <div
+      class="modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="conclusionModalTitle"
+    >
+
+      <div class="modal-header">
+
+        <div>
+          <p class="eyebrow">
+            Conclusão
+          </p>
+
+          <h2 id="conclusionModalTitle">
+            Concluir território
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close"
+          id="conclusionModalClose"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="conclusionForm">
+
+        <div class="form-group">
+
+          <label for="conclusionDate">
+            Data da devolução
+          </label>
+
+          <input
+            type="date"
+            id="conclusionDate"
+            name="dataDevolucao"
+            required
+          >
+
+          <small>
+            Informe a data em que o território foi realmente devolvido.
+          </small>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="btn-secondary"
+            id="conclusionCancel"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="btn-primary"
+          >
+            Confirmar conclusão
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/territorio.js"></script>
-  <script src="assets/js/territorio.js"></script>
+  
 
 </body>
 </html>

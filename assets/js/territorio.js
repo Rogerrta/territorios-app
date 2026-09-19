@@ -1131,7 +1131,11 @@ Bom trabalho!`;
 // CONCLUSÃO
 // ===============================
 
-async function concluirTerritorio() {
+// ===============================
+// ABRIR MODAL DE CONCLUSÃO
+// ===============================
+
+function concluirTerritorio() {
 
   if (!territorioAtual) {
     return;
@@ -1162,90 +1166,88 @@ async function concluirTerritorio() {
   }
 
 
-  const confirmar =
-    confirm(
-      `Concluir o território ${territorioAtual.numero}?`
+  const modal =
+    document.getElementById(
+      "conclusionModal"
     );
 
 
-  if (!confirmar) {
+  const campoData =
+    document.getElementById(
+      "conclusionDate"
+    );
+
+
+  const titulo =
+    document.getElementById(
+      "conclusionModalTitle"
+    );
+
+
+  if (
+    !modal
+    ||
+    !campoData
+  ) {
+
     return;
   }
 
 
-  try {
-
-    const dataConclusao =
-      obterDataHoje();
+  const hoje =
+    obterDataHoje();
 
 
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("Designacoes")
-        .update({
-          data_devolucao:
-            dataConclusao
-        })
-        .eq(
-          "id",
-          designacaoAtiva.id
-        )
-        .is(
-          "data_devolucao",
-          null
-        )
-        .select(
-          "id, territorio_id, data_devolucao"
-        );
+  campoData.value =
+    hoje;
 
 
-    if (error) {
-
-      throw error;
-    }
+  campoData.max =
+    hoje;
 
 
-    console.log(
-      "Resultado da conclusão:",
-      data
+  if (
+    designacaoAtiva.data_retirada
+  ) {
+
+    campoData.min =
+      designacaoAtiva.data_retirada;
+
+  } else {
+
+    campoData.removeAttribute(
+      "min"
     );
 
-
-    if (
-      !data
-      ||
-      data.length === 0
-    ) {
-
-      throw new Error(
-        "Nenhuma designação foi atualizada. Verifique a policy UPDATE da tabela Designacoes."
-      );
-    }
-
-
-    alert(
-      `Território ${territorioAtual.numero} concluído com sucesso.`
-    );
-
-
-    await carregarTerritorio();
-
-
-  } catch (erro) {
-
-    console.error(
-      "Erro ao concluir território:",
-      erro
-    );
-
-
-    alert(
-      "Não foi possível concluir o território no Supabase."
-    );
   }
+
+
+  if (titulo) {
+
+    titulo.textContent =
+      `Concluir território ${territorioAtual.numero}`;
+
+  }
+
+
+  modal.classList.add(
+    "active"
+  );
+
+
+  modal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  campoData.focus();
+
 }
 // ===============================
 // MODAL DO MAPA
@@ -1430,6 +1432,39 @@ function fecharModalDesignacao() {
 
 }
 
+// ===============================
+// MODAL DE CONCLUSÃO
+// ===============================
+
+function fecharModalConclusao() {
+
+  const modal =
+    document.getElementById(
+      "conclusionModal"
+    );
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  modal.classList.remove(
+    "active"
+  );
+
+
+  modal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+}
 
 // ===============================
 // ELEMENTOS DO MODAL
@@ -1452,6 +1487,22 @@ const designationCancel =
     "designationCancel"
   );
 
+const conclusionForm =
+  document.getElementById(
+    "conclusionForm"
+  );
+
+
+const conclusionModalClose =
+  document.getElementById(
+    "conclusionModalClose"
+  );
+
+
+const conclusionCancel =
+  document.getElementById(
+    "conclusionCancel"
+  );
 
 const mapModalClose =
   document.getElementById(
@@ -1691,6 +1742,191 @@ if (designationForm) {
 
 }
 
+// ===============================
+// EVENTOS DO MODAL DE CONCLUSÃO
+// ===============================
+
+if (conclusionModalClose) {
+
+  conclusionModalClose.addEventListener(
+    "click",
+    fecharModalConclusao
+  );
+
+}
+
+
+if (conclusionCancel) {
+
+  conclusionCancel.addEventListener(
+    "click",
+    fecharModalConclusao
+  );
+
+}
+
+
+// ===============================
+// CONFIRMAR CONCLUSÃO
+// ===============================
+
+if (conclusionForm) {
+
+  conclusionForm.addEventListener(
+    "submit",
+    async evento => {
+
+      evento.preventDefault();
+
+
+      if (
+        !territorioAtual
+        ||
+        !designacaoAtiva
+      ) {
+
+        return;
+
+      }
+
+
+      const campoData =
+        document.getElementById(
+          "conclusionDate"
+        );
+
+
+      if (!campoData) {
+        return;
+      }
+
+
+      const dataConclusao =
+        campoData.value;
+
+
+      const dataDesignacao =
+        designacaoAtiva.data_retirada;
+
+
+      const hoje =
+        obterDataHoje();
+
+
+      if (!dataConclusao) {
+
+        alert(
+          "Informe a data da devolução."
+        );
+
+        return;
+      }
+
+
+      if (
+        dataDesignacao
+        &&
+        dataConclusao <
+          dataDesignacao
+      ) {
+
+        alert(
+          "A data da devolução não pode ser anterior à data da designação."
+        );
+
+        return;
+      }
+
+
+      if (
+        dataConclusao >
+        hoje
+      ) {
+
+        alert(
+          "A data da devolução não pode ser uma data futura."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient
+            .from(
+              "Designacoes"
+            )
+            .update({
+              data_devolucao:
+                dataConclusao
+            })
+            .eq(
+              "id",
+              designacaoAtiva.id
+            )
+            .is(
+              "data_devolucao",
+              null
+            )
+            .select(
+              "id, territorio_id, data_devolucao"
+            );
+
+
+        if (error) {
+
+          throw error;
+
+        }
+
+
+        if (
+          !data
+          ||
+          data.length === 0
+        ) {
+
+          throw new Error(
+            "Nenhuma designação foi atualizada."
+          );
+
+        }
+
+
+        fecharModalConclusao();
+
+
+        alert(
+          `Território ${territorioAtual.numero} concluído com sucesso.`
+        );
+
+
+        await carregarTerritorio();
+
+
+      } catch (erro) {
+
+        console.error(
+          "Erro ao concluir território:",
+          erro
+        );
+
+
+        alert(
+          "Não foi possível concluir o território no Supabase."
+        );
+
+      }
+
+    }
+  );
+
+}
 
 // ===============================
 // TECLA ESC
@@ -1708,6 +1944,8 @@ document.addEventListener(
       fecharMapa();
 
       fecharModalDesignacao();
+
+      fecharModalConclusao();
 
     }
 
